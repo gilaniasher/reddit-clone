@@ -1,8 +1,11 @@
-const App = () => {
+import React from 'react'
+import ShortPost from './components/ShortPost'
+
+const App: React.FC = () => {
   return (
-    <h1 className="text-3xl font-bold underline">
-      Hello World!
-    </h1>
+    <div className="flex justify-center w-screen h-screen bg-white dark:bg-gray-800 dark:text-white">
+			<ShortPost />
+    </div>
   )
 }
 
