@@ -29,6 +29,12 @@ input NewPost {
   subText: String!
 }
 
+input NewUser {
+  username: String!
+  email: String!
+}
+
 type Mutation {
-  createPost(input: NewPost!): Post!
+  createPost(input: NewPost!): Boolean!
+  createUser(input: NewUser!): Boolean!
 }

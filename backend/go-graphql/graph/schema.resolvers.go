@@ -3,36 +3,126 @@ package graph
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
 
+// go get -u github.com/99designs/cmd
+// go run github.com/99designs/gqlgen generate
+
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+
+	"github.com/google/uuid"
 
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/generated"
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/model"
 )
 
-func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error) {
-	panic(fmt.Errorf("not implemented"))
+var sess = session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
+var svc = dynamodb.New(sess, &aws.Config{Endpoint: aws.String("http://localhost:8000")})
+
+type UserDdb struct {
+	UserID   string
+	Username string
+	Email    string
+}
+
+type PostDdb struct {
+	PostId            string
+	CreationTimestamp string
+	PosterId          string
+	Likes             int
+	Subreddit         string
+	HeaderText        string
+	SubText           string
+}
+
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (bool, error) {
+	// Add this post to DynamoDB
+	av, err := dynamodbattribute.MarshalMap(PostDdb{
+		PostId:            uuid.New().String(),
+		CreationTimestamp: time.Now().Format(time.RFC3339),
+		PosterId:          input.PosterID,
+		Likes:             0,
+		Subreddit:         input.Subreddit,
+		HeaderText:        input.HeaderText,
+		SubText:           input.SubText,
+	})
+
+	if err != nil {
+		log.Fatalf("Error marshalling new Post Item: %s", err)
+	}
+
+	_, err = svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("postsTable-reddit-clone")})
+
+	if err != nil {
+		log.Fatalf("Error calling PutItem: %s", err)
+	}
+
+	fmt.Printf("Successfully added post with PostID: %s to PostsTable\n", input.PosterID)
+	return true, nil
 }
 
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	expr, err := expression.NewBuilder().Build()
+
+	if err != nil {
+		log.Fatalf("Failed to create Posts DDB expression: %s", err)
+	}
+
+	result, err := svc.Scan(&dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		TableName:                 aws.String("postsTable-reddit-clone"),
+		Limit:                     aws.Int64(10),
+	})
+
+	if err != nil {
+		log.Fatalf("Failed to make Scan DDB Call: %s", err)
+	}
+
 	var posts []*model.Post
 
-	user := model.User{
-		Username: "u/jerryJoe",
-		Email:    "test@email.com",
+	for _, i := range result.Items {
+		post := PostDdb{}
+		err = dynamodbattribute.UnmarshalMap(i, &post)
+
+		if err != nil {
+			log.Fatalf("Error unmarshalling: %s", err)
+		}
+
+		// Query Dynamodb for user from userId
+		userResult, err := svc.GetItem(&dynamodb.GetItemInput{
+			TableName: aws.String("usersTable-reddit-clone"),
+			Key:       map[string]*dynamodb.AttributeValue{"UserId": {S: aws.String(post.PosterId)}},
+		})
+
+		if err != nil {
+			log.Fatalf("Error looking up user with id: %s", post.PosterId)
+		}
+
+		ddbUser := UserDdb{}
+		dynamodbattribute.UnmarshalMap(userResult.Item, &ddbUser)
+
+		posts = append(posts, &model.Post{
+			Likes:      post.Likes,
+			Subreddit:  post.Subreddit,
+			Timestamp:  post.CreationTimestamp,
+			HeaderText: post.HeaderText,
+			SubText:    post.SubText,
+			Poster: &model.User{
+				Username: ddbUser.Username,
+				Email:    ddbUser.Email,
+			},
+		})
 	}
 
-	dummyPost := model.Post{
-		Likes:      300,
-		Subreddit:  "r/AskReddit",
-		Poster:     &user,
-		Timestamp:  "2022-01-03T21:45:58+00:00",
-		HeaderText: "Whats your favorite song?",
-		SubText:    "Mine is Never Gonna Give you Up",
-	}
-
-	posts = append(posts, &dummyPost)
 	return posts, nil
 }
 

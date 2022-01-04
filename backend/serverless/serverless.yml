@@ -14,15 +14,28 @@ resources:
       Properties:
         TableName: postsTable-reddit-clone
         AttributeDefinitions:
-          - AttributeName: postId
+          - AttributeName: PostId
             AttributeType: S
-          - AttributeName: creationTimestamp
+          - AttributeName: CreationTimestamp
             AttributeType: S
         KeySchema:
-          - AttributeName: postId
+          - AttributeName: PostId
             KeyType: HASH
-          - AttributeName: creationTimestamp
+          - AttributeName: CreationTimestamp
             KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    usersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: usersTable-reddit-clone
+        AttributeDefinitions:
+          - AttributeName: UserId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: UserId
+            KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

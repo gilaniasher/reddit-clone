@@ -69,7 +69,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error)
+	CreatePost(ctx context.Context, input model.NewPost) (bool, error)
 }
 type QueryResolver interface {
 	Posts(ctx context.Context) ([]*model.Post, error)
@@ -244,6 +244,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "graph/schema.graphqls", Input: `# GraphQL schema example
+# Need to run this before regenerating: go get -u github.com/99designs/gqlgen/cmd
 # https://gqlgen.com/getting-started/
 
 type Post {
@@ -274,7 +275,7 @@ input NewPost {
 }
 
 type Mutation {
-  createPost(input: NewPost!): Post!
+  createPost(input: NewPost!): Boolean!
 }
 `, BuiltIn: false},
 }
@@ -389,9 +390,9 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Post)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNPost2ᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -2494,10 +2495,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 func (ec *executionContext) unmarshalNNewPost2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐNewPost(ctx context.Context, v interface{}) (model.NewPost, error) {
 	res, err := ec.unmarshalInputNewPost(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNPost2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
-	return ec._Post(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNPost2ᚕᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
