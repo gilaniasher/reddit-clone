@@ -1,4 +1,5 @@
 import React from 'react'
+import { ShortPostData } from './PostContainer'
 import { ArrowSmUpIcon, ArrowSmDownIcon } from '@heroicons/react/outline'
 
 import dayjs from 'dayjs'
@@ -6,14 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
 
 interface Props {
-	post: {
-		likes: number,
-		subreddit: string,
-		poster: string,
-		timestamp: string,
-		headerText: string,
-		subText: string
-	}
+	post: ShortPostData
 }
 
 const Post: React.FC<Props> = ({ post }) => {
@@ -30,7 +24,7 @@ const Post: React.FC<Props> = ({ post }) => {
 			<div className="w-11/12 flex flex-col p-3">
 				<div className="flex flex-row mb-2">
 					<span className="font-bold mr-1">{ subreddit }</span>
-					<span className="font-thin text-gray-500 mr-1">• Posted by { poster }</span>
+					<span className="font-thin text-gray-500 mr-1">• Posted by { poster.username }</span>
 					<span className="font-thin text-gray-500">• { dayjs(timestamp).fromNow() }</span>
 				</div>	
 				<div className="text-3xl mb-2">{ headerText }</div>
