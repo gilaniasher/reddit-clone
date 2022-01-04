@@ -18,17 +18,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 
-	"github.com/google/uuid"
-
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/generated"
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/model"
+	"github.com/google/uuid"
 )
 
 var sess = session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
 var svc = dynamodb.New(sess, &aws.Config{Endpoint: aws.String("http://localhost:8000")})
 
 type UserDdb struct {
-	UserID   string
+	UserId   string
 	Username string
 	Email    string
 }
@@ -45,8 +44,10 @@ type PostDdb struct {
 
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (bool, error) {
 	// Add this post to DynamoDB
-	av, err := dynamodbattribute.MarshalMap(PostDdb{
-		PostId:            uuid.New().String(),
+	newPostId := uuid.New().String()
+
+	av, _ := dynamodbattribute.MarshalMap(PostDdb{
+		PostId:            newPostId,
 		CreationTimestamp: time.Now().Format(time.RFC3339),
 		PosterId:          input.PosterID,
 		Likes:             0,
@@ -55,26 +56,38 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 		SubText:           input.SubText,
 	})
 
-	if err != nil {
-		log.Fatalf("Error marshalling new Post Item: %s", err)
-	}
-
-	_, err = svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("postsTable-reddit-clone")})
+	_, err := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("postsTable-reddit-clone")})
 
 	if err != nil {
 		log.Fatalf("Error calling PutItem: %s", err)
 	}
 
-	fmt.Printf("Successfully added post with PostID: %s to PostsTable\n", input.PosterID)
+	fmt.Printf("Successfully added post with PostID: %s to PostsTable\n", newPostId)
+	return true, nil
+}
+
+func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (bool, error) {
+	// Add user to DynamoDB
+	newUserId := uuid.New().String()
+
+	av, _ := dynamodbattribute.MarshalMap(UserDdb{
+		UserId:   newUserId,
+		Username: input.Username,
+		Email:    input.Email,
+	})
+
+	_, err := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("usersTable-reddit-clone")})
+
+	if err != nil {
+		log.Fatalf("Error calling PutItem: %s", err)
+	}
+
+	fmt.Printf("Successfully added user with UserID: %s", newUserId)
 	return true, nil
 }
 
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
-	expr, err := expression.NewBuilder().Build()
-
-	if err != nil {
-		log.Fatalf("Failed to create Posts DDB expression: %s", err)
-	}
+	expr, _ := expression.NewBuilder().Build()
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
 		ExpressionAttributeNames:  expr.Names(),
