@@ -1,0 +1,34 @@
+# GraphQL schema example
+# Need to run this before regenerating: go get -u github.com/99designs/gqlgen/cmd
+# https://gqlgen.com/getting-started/
+
+type Post {
+  id: ID!
+  likes: Int!
+  subreddit: String!
+  poster: User!
+  timestamp: String!
+  headerText: String!
+  subText: String!
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String!
+}
+
+type Query {
+  posts: [Post!]!
+}
+
+input NewPost {
+  subreddit: String!
+  posterId: String!
+  headerText: String!
+  subText: String!
+}
+
+type Mutation {
+  createPost(input: NewPost!): Post!
+}
