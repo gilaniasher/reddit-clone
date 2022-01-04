@@ -2,11 +2,14 @@
   "name": "serverless",
   "version": "1.0.0",
   "scripts": {
-		"start": "sls offline start --host 127.0.0.1",
+		"start-db": "sls dynamodb start --migrate",
 		"view-table": "dynamodb-admin"
   },
   "dependencies": {
-    "serverless-dynamodb-local": "^0.2.40",
-    "serverless-offline": "^8.3.1"
-  }
+    "serverless-dynamodb-local": "^0.2.40"
+  },
+	"scriptComments": {
+		"start-db": "Install notes: npm i -g serverless",
+		"view-table": "Install notes: npm i -g dynamodb-admin"
+	}
 }
