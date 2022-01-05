@@ -27,7 +27,6 @@ var sess = session.Must(session.NewSessionWithOptions(session.Options{SharedConf
 var svc = dynamodb.New(sess, &aws.Config{Endpoint: aws.String("http://localhost:8000")})
 
 type UserDdb struct {
-	UserId   string
 	Username string
 	Email    string
 }

@@ -34,6 +34,8 @@ const SignupForm: React.FC = () => {
 	const [createUser, { error, loading, called }] = useMutation<{ createUser: CreateUserResult }, { input: CreateUserInput }>(CREATE_USER)
 
 	const initSignup = () => {
+		setUsername('')
+		setEmail('')
 		createUser({ variables: { input: { username, email } } })
 	}
 
@@ -43,11 +45,13 @@ const SignupForm: React.FC = () => {
 			<input
 				className="p-3 border-2 rounded-lg mb-4"
 				placeholder="Unique Username"
+				value={username}
 				onChange={e => setUsername(e.target.value)}
 			/>
 			<input
 				className="p-3 border-2 rounded-lg"
 				placeholder="Email"
+				value={email}
 				onChange={e => setEmail(e.target.value)}
 			/>
 			<button onClick={initSignup} className="rounded-lg w-36 h-12 bg-cyan-300 text-black my-5 flex flex-row items-center justify-center">
