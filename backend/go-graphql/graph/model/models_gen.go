@@ -4,7 +4,7 @@ package model
 
 type NewPost struct {
 	Subreddit  string `json:"subreddit"`
-	PosterID   string `json:"posterId"`
+	Poster     string `json:"poster"`
 	HeaderText string `json:"headerText"`
 	SubText    string `json:"subText"`
 }
@@ -18,14 +18,13 @@ type Post struct {
 	ID         string `json:"id"`
 	Likes      int    `json:"likes"`
 	Subreddit  string `json:"subreddit"`
-	Poster     *User  `json:"poster"`
+	Poster     string `json:"poster"`
 	Timestamp  string `json:"timestamp"`
 	HeaderText string `json:"headerText"`
 	SubText    string `json:"subText"`
 }
 
 type User struct {
-	ID       string `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 }

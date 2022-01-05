@@ -7,10 +7,7 @@ import { RECENT_POSTS } from '../apollo/queries'
 export interface ShortPostData {
 	likes: number,
 	subreddit: string,
-	poster: {
-		email: string,
-		username: string
-	},
+	poster: string,
 	timestamp: string,
 	headerText: string,
 	subText: string

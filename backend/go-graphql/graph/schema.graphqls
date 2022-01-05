@@ -6,14 +6,13 @@ type Post {
   id: ID!
   likes: Int!
   subreddit: String!
-  poster: User!
+  poster: String!
   timestamp: String!
   headerText: String!
   subText: String!
 }
 
 type User {
-  id: ID!
   username: String!
   email: String!
 }
@@ -24,7 +23,7 @@ type Query {
 
 input NewPost {
   subreddit: String!
-  posterId: String!
+  poster: String!
   headerText: String!
   subText: String!
 }
@@ -35,6 +34,6 @@ input NewUser {
 }
 
 type Mutation {
-  createPost(input: NewPost!): Boolean!
-  createUser(input: NewUser!): Boolean!
+  createPost(input: NewPost!): String!
+  createUser(input: NewUser!): String! 
 }

@@ -3,13 +3,13 @@ package graph
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
 
-// go get -u github.com/99designs/cmd
+// go get -u github.com/99designs/gqlgen/cmd
 // go run github.com/99designs/gqlgen generate
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,21 +35,21 @@ type UserDdb struct {
 type PostDdb struct {
 	PostId            string
 	CreationTimestamp string
-	PosterId          string
+	Poster            string
 	Likes             int
 	Subreddit         string
 	HeaderText        string
 	SubText           string
 }
 
-func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (bool, error) {
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (string, error) {
 	// Add this post to DynamoDB
 	newPostId := uuid.New().String()
 
 	av, _ := dynamodbattribute.MarshalMap(PostDdb{
 		PostId:            newPostId,
 		CreationTimestamp: time.Now().Format(time.RFC3339),
-		PosterId:          input.PosterID,
+		Poster:            input.Poster,
 		Likes:             0,
 		Subreddit:         input.Subreddit,
 		HeaderText:        input.HeaderText,
@@ -59,34 +59,49 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 	_, err := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("postsTable-reddit-clone")})
 
 	if err != nil {
-		log.Fatalf("Error calling PutItem: %s", err)
+		return newPostId, errors.New("database put call failed")
 	}
 
 	fmt.Printf("Successfully added post with PostID: %s to PostsTable\n", newPostId)
-	return true, nil
+	return newPostId, nil
 }
 
-func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (bool, error) {
-	// Add user to DynamoDB
-	newUserId := uuid.New().String()
+func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (string, error) {
+	// Verify that username is unique in DynamoDB
+	result, errGet := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String("usersTable-reddit-clone"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Username": {S: aws.String(input.Username)},
+		},
+	})
 
+	if errGet != nil {
+		return input.Username, errors.New("database get call failed")
+	}
+
+	if result.Item != nil {
+		return input.Username, errors.New("this username has been taken")
+	}
+
+	// Add user to DynamoDB
 	av, _ := dynamodbattribute.MarshalMap(UserDdb{
-		UserId:   newUserId,
 		Username: input.Username,
 		Email:    input.Email,
 	})
 
-	_, err := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("usersTable-reddit-clone")})
+	_, errPut := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("usersTable-reddit-clone")})
 
-	if err != nil {
-		log.Fatalf("Error calling PutItem: %s", err)
+	if errPut != nil {
+		fmt.Printf("Error calling PutItem: %s\n", errPut)
+		return input.Username, errors.New("database put call failed")
 	}
 
-	fmt.Printf("Successfully added user with UserID: %s", newUserId)
-	return true, nil
+	fmt.Printf("Successfully added user: %s", input.Username)
+	return input.Username, nil
 }
 
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	var posts []*model.Post
 	expr, _ := expression.NewBuilder().Build()
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
@@ -97,31 +112,12 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	})
 
 	if err != nil {
-		log.Fatalf("Failed to make Scan DDB Call: %s", err)
+		return posts, errors.New("database scan call failed")
 	}
-
-	var posts []*model.Post
 
 	for _, i := range result.Items {
 		post := PostDdb{}
-		err = dynamodbattribute.UnmarshalMap(i, &post)
-
-		if err != nil {
-			log.Fatalf("Error unmarshalling: %s", err)
-		}
-
-		// Query Dynamodb for user from userId
-		userResult, err := svc.GetItem(&dynamodb.GetItemInput{
-			TableName: aws.String("usersTable-reddit-clone"),
-			Key:       map[string]*dynamodb.AttributeValue{"UserId": {S: aws.String(post.PosterId)}},
-		})
-
-		if err != nil {
-			log.Fatalf("Error looking up user with id: %s", post.PosterId)
-		}
-
-		ddbUser := UserDdb{}
-		dynamodbattribute.UnmarshalMap(userResult.Item, &ddbUser)
+		dynamodbattribute.UnmarshalMap(i, &post)
 
 		posts = append(posts, &model.Post{
 			Likes:      post.Likes,
@@ -129,13 +125,11 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 			Timestamp:  post.CreationTimestamp,
 			HeaderText: post.HeaderText,
 			SubText:    post.SubText,
-			Poster: &model.User{
-				Username: ddbUser.Username,
-				Email:    ddbUser.Email,
-			},
+			Poster:     post.Poster,
 		})
 	}
 
+	fmt.Println("Hot Posts Retrieved")
 	return posts, nil
 }
 

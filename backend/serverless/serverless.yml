@@ -31,10 +31,10 @@ resources:
       Properties:
         TableName: usersTable-reddit-clone
         AttributeDefinitions:
-          - AttributeName: UserId
+          - AttributeName: Username
             AttributeType: S
         KeySchema:
-          - AttributeName: UserId
+          - AttributeName: Username
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1

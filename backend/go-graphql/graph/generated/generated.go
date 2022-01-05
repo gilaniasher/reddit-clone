@@ -64,14 +64,13 @@ type ComplexityRoot struct {
 
 	User struct {
 		Email    func(childComplexity int) int
-		ID       func(childComplexity int) int
 		Username func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	CreatePost(ctx context.Context, input model.NewPost) (bool, error)
-	CreateUser(ctx context.Context, input model.NewUser) (bool, error)
+	CreatePost(ctx context.Context, input model.NewPost) (string, error)
+	CreateUser(ctx context.Context, input model.NewUser) (string, error)
 }
 type QueryResolver interface {
 	Posts(ctx context.Context) ([]*model.Post, error)
@@ -179,13 +178,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Email(childComplexity), true
 
-	case "User.id":
-		if e.complexity.User.ID == nil {
-			break
-		}
-
-		return e.complexity.User.ID(childComplexity), true
-
 	case "User.username":
 		if e.complexity.User.Username == nil {
 			break
@@ -265,14 +257,13 @@ type Post {
   id: ID!
   likes: Int!
   subreddit: String!
-  poster: User!
+  poster: String!
   timestamp: String!
   headerText: String!
   subText: String!
 }
 
 type User {
-  id: ID!
   username: String!
   email: String!
 }
@@ -283,7 +274,7 @@ type Query {
 
 input NewPost {
   subreddit: String!
-  posterId: String!
+  poster: String!
   headerText: String!
   subText: String!
 }
@@ -294,8 +285,8 @@ input NewUser {
 }
 
 type Mutation {
-  createPost(input: NewPost!): Boolean!
-  createUser(input: NewUser!): Boolean!
+  createPost(input: NewPost!): String!
+  createUser(input: NewUser!): String! 
 }
 `, BuiltIn: false},
 }
@@ -425,9 +416,9 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -467,9 +458,9 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -607,9 +598,9 @@ func (ec *executionContext) _Post_poster(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -821,41 +812,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "User",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_username(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -2067,11 +2023,11 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
-		case "posterId":
+		case "poster":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("posterId"))
-			it.PosterID, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("poster"))
+			it.Poster, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2284,11 +2240,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("User")
-		case "id":
-			out.Values[i] = ec._User_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "username":
 			out.Values[i] = ec._User_username(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -2682,16 +2633,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

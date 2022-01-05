@@ -5,11 +5,7 @@ export const RECENT_POSTS = gql`
 		posts {
 			likes
 			subreddit
-			poster {
-				id
-				username
-				email
-			}
+			poster
 			timestamp
 			headerText
 			subText
