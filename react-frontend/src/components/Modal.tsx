@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { XIcon } from '@heroicons/react/outline'
 
-import { useReactiveVar } from '@apollo/client'
+import { useMutation, useReactiveVar } from '@apollo/client'
 import { localStateVar } from '../apollo/cache'
 import { useLocalState } from '../apollo/hooks'
+import { CREATE_USER } from '../apollo/mutations'
 
 const LoginForm: React.FC = () =>  {
 	const [username, setUsername] = useState('')
@@ -29,22 +30,32 @@ const LoginForm: React.FC = () =>  {
 
 const SignupForm: React.FC = () => {
 	const [username, setUsername] = useState('')
+	const [email, setEmail] = useState('')
+	const [createUser, { data, error, loading }] = useMutation(CREATE_USER)
 
 	const initSignup = () => {
-		console.log('Signing up')
+		createUser({ variables: { input: { username, email } } })
+		console.log('Signup data: ', data)
 	}
 
 	return (
 		<div className="flex text-center flex-col items-center">
 			<h1 className="text-2xl mb-5">Sign Up</h1>
 			<input
-				className="p-3 border-2 rounded-lg"
+				className="p-3 border-2 rounded-lg mb-4"
 				placeholder="Unique Username"
 				onChange={e => setUsername(e.target.value)}
 			/>
-			<button onClick={initSignup} className="rounded-lg w-24 h-10 bg-cyan-300 text-black my-5">
+			<input
+				className="p-3 border-2 rounded-lg"
+				placeholder="Email"
+				onChange={e => setEmail(e.target.value)}
+			/>
+			<button onClick={initSignup} className="rounded-lg w-36 h-12 bg-cyan-300 text-black my-5 flex flex-row items-center justify-center">
+				{ loading && <div className="animate-spin h-5 w-5 rounded-full border-b-2 border-gray-900 mr-3" /> }
 				Sign Up!
 			</button>
+			<p className="text-red-600">{JSON.stringify(error)}</p>
 		</div>
 	)
 }
