@@ -28,6 +28,7 @@ const PostContainer: React.FC = () => {
 
 	return (
 		<div className="flex flex-col w-full items-center py-5">
+			{ data.posts.length === 0 && <p>No Posts To Show :(</p> }
 			{ (data.posts as ShortPostData[]).map((p, idx) => 
 					<ShortPost key={idx} post={p} />
 			)}
