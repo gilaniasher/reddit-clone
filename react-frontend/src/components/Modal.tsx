@@ -1,4 +1,9 @@
 import React, { useState } from 'react'
+import { XIcon } from '@heroicons/react/outline'
+
+import { useReactiveVar } from '@apollo/client'
+import { localStateVar } from '../apollo/cache'
+import { useLocalState } from '../apollo/hooks'
 
 const LoginForm: React.FC = () =>  {
 	const [username, setUsername] = useState('')
@@ -45,14 +50,16 @@ const SignupForm: React.FC = () => {
 }
 
 const LoginModal: React.FC = () => {
-	const [modal, setModal] = useState('login')
+	const { modal } = useReactiveVar(localStateVar)
+	const { setModal } = useLocalState(localStateVar)
 
-	if (!modal)
+	if (modal === '')
 		return <></>
 
 	return (
-		<div className="flex justify-center items-center bg-gray-500 bg-transparent w-full h-full pointer-events-none z-10 fixed">
-			<div className="flex justify-center items-center w-3/5 h-2/5 bg-white text-black py-10 pointer-events-auto">
+		<div className="flex justify-center items-center bg-gray-300 bg-opacity-40 w-full h-full z-10 fixed">
+			<div className="flex justify-center items-center w-3/5 h-2/5 bg-white text-black py-10 z-20">
+				<XIcon onClick={() => setModal('')} className="fixed w-10 h-10 left-3/4 top-1/3" />
 				{ modal === 'login' && <LoginForm /> }
 				{ modal === 'signup' && <SignupForm /> }
 			</div>
