@@ -19,6 +19,7 @@ type User {
 
 type Query {
   posts: [Post!]!
+  user(username: String!): User!
 }
 
 input NewPost {

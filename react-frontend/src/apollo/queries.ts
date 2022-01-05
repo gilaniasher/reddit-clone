@@ -27,3 +27,23 @@ export const RECENT_POSTS = gql`
 		}
 	}  
 `
+
+/* Load User Data */
+
+export interface UserInput {
+	username: string
+}
+
+export interface UserResponse {
+	username: string,
+	email: string
+}
+
+export const GET_USER = gql`
+	query getUser($username: String!) {
+		user(username: $username) {
+			username,
+			email
+		}
+	}
+`

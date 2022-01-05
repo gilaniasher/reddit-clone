@@ -132,6 +132,30 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	return posts, nil
 }
 
+func (r *queryResolver) User(ctx context.Context, username string) (*model.User, error) {
+	result, err := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String("usersTable-reddit-clone"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Username": {S: aws.String(username)},
+		},
+	})
+
+	userDdb := UserDdb{}
+	user := model.User{}
+
+	if err != nil {
+		return &user, errors.New("database get call failed")
+	} else if result.Item == nil {
+		return &user, errors.New("user, " + username + ", does not exist")
+	}
+
+	dynamodbattribute.UnmarshalMap(result.Item, &userDdb)
+	user.Username = userDdb.Email
+	user.Email = userDdb.Email
+
+	return &user, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
