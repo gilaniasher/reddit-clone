@@ -4,7 +4,7 @@ import { XIcon } from '@heroicons/react/outline'
 import { useMutation, useReactiveVar } from '@apollo/client'
 import { localStateVar } from '../apollo/cache'
 import { useLocalState } from '../apollo/hooks'
-import { CREATE_USER } from '../apollo/mutations'
+import { CREATE_USER, CreateUserInput, CreateUserResult } from '../apollo/mutations'
 
 const LoginForm: React.FC = () =>  {
 	const [username, setUsername] = useState('')
@@ -31,11 +31,10 @@ const LoginForm: React.FC = () =>  {
 const SignupForm: React.FC = () => {
 	const [username, setUsername] = useState('')
 	const [email, setEmail] = useState('')
-	const [createUser, { data, error, loading }] = useMutation(CREATE_USER)
+	const [createUser, { error, loading, called }] = useMutation<{ createUser: CreateUserResult }, { input: CreateUserInput }>(CREATE_USER)
 
 	const initSignup = () => {
 		createUser({ variables: { input: { username, email } } })
-		console.log('Signup data: ', data)
 	}
 
 	return (
@@ -55,7 +54,12 @@ const SignupForm: React.FC = () => {
 				{ loading && <div className="animate-spin h-5 w-5 rounded-full border-b-2 border-gray-900 mr-3" /> }
 				Sign Up!
 			</button>
-			<p className="text-red-600">{JSON.stringify(error)}</p>
+			{ (error !== undefined) &&
+					<p className="text-red-600 capitalize">{error.message}</p>
+			}
+			{ (called && !loading && error === undefined) &&
+					<p className="text-green-600">User created succesfully</p>
+			}
 		</div>
 	)
 }

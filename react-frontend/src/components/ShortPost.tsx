@@ -1,6 +1,6 @@
 import React from 'react'
-import { ShortPostData } from './PostContainer'
 import { ArrowSmUpIcon, ArrowSmDownIcon } from '@heroicons/react/outline'
+import { ShortPostData } from '../apollo/queries'
 
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'

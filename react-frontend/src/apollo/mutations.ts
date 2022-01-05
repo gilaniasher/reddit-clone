@@ -1,10 +1,18 @@
 import { gql } from '@apollo/client'
 
-// There are problems with this mutation, not the right syntax
-// I might have to add username and email again
+/* Create New User (Simplified) */
+
+export interface CreateUserInput {
+	username: string,
+	email: string
+}
+
+export interface CreateUserResult {
+	username: string
+}
 
 export const CREATE_USER = gql`
-	mutation CreateUser($input: NewUser!) {
+	mutation createUser($input: NewUser!) {
 		createUser(input: $input)
 	}
 `

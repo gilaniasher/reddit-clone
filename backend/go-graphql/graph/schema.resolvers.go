@@ -96,7 +96,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 		return input.Username, errors.New("database put call failed")
 	}
 
-	fmt.Printf("Successfully added user: %s", input.Username)
+	fmt.Printf("Successfully added user: %s\n", input.Username)
 	return input.Username, nil
 }
 
