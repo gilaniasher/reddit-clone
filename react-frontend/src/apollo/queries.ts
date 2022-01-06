@@ -15,13 +15,17 @@ export interface ShortPostData {
 	subText: string
 }
 
+export interface RecentPostsInput {
+	username?: string
+}
+
 export interface RecentPostsResult {
 	posts: ShortPostData[]
 }
 
 export const RECENT_POSTS = gql`
-	query {
-		posts {
+	query posts($username: String) {
+		posts(username: $username) {
 			id
 			likes
 			dislikes

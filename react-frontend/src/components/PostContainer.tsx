@@ -4,13 +4,13 @@ import ShortPost from './ShortPost'
 import CreatePost from './CreatePost'
 
 import { useQuery, useReactiveVar } from '@apollo/client'
-import { RECENT_POSTS, RecentPostsResult } from '../apollo/queries'
+import { RECENT_POSTS, RecentPostsInput, RecentPostsResult } from '../apollo/queries'
 import { localStateVar } from '../apollo/cache'
 import { useLocalState } from '../apollo/hooks'
 
 const PostContainer: React.FC = () => {
-	const { loading, error, data, refetch } = useQuery<RecentPostsResult>(RECENT_POSTS)
-	const { showCreatePost, reloadPosts } = useReactiveVar(localStateVar)
+	const { showCreatePost, reloadPosts, loggedInUser } = useReactiveVar(localStateVar)
+	const { loading, error, data, refetch } = useQuery<RecentPostsResult, RecentPostsInput>(RECENT_POSTS, { variables: { username: loggedInUser?.username } })
 	const { triggerReload } = useLocalState(localStateVar)	
 
 	useEffect(() => {

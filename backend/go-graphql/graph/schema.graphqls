@@ -21,7 +21,7 @@ type User {
 }
 
 type Query {
-  posts(username: String!): [Post!]!
+  posts(username: String): [Post!]!
   user(username: String!): User!
 }
 

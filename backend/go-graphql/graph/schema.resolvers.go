@@ -147,7 +147,7 @@ func (r *mutationResolver) VotePost(ctx context.Context, postID string, username
 	return postID, nil
 }
 
-func (r *queryResolver) Posts(ctx context.Context, username string) ([]*model.Post, error) {
+func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.Post, error) {
 	var posts []*model.Post
 	expr, _ := expression.NewBuilder().Build()
 
@@ -167,12 +167,23 @@ func (r *queryResolver) Posts(ctx context.Context, username string) ([]*model.Po
 		post := PostDdb{}
 		dynamodbattribute.UnmarshalMap(i, &post)
 
+		var userLiked, userDisliked bool
+
+		if username == nil {
+			userLiked = false
+			userDisliked = false
+		} else {
+			// Should figure out how to query the set from DDB instead of this manual search
+			userLiked = contains(post.Likes, *username)
+			userDisliked = contains(post.Likes, *username)
+		}
+
 		posts = append(posts, &model.Post{
 			ID:           post.PostId,
 			Likes:        len(post.Likes) - 1,
 			Dislikes:     len(post.Dislikes) - 1,
-			UserLiked:    contains(post.Likes, username),    // Should figure out how to query the set
-			UserDisliked: contains(post.Dislikes, username), // from DDB instead of this manual search
+			UserLiked:    userLiked,
+			UserDisliked: userDisliked,
 			Subreddit:    post.Subreddit,
 			Timestamp:    post.CreationTimestamp,
 			HeaderText:   post.HeaderText,

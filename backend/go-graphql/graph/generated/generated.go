@@ -63,7 +63,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Posts func(childComplexity int, username string) int
+		Posts func(childComplexity int, username *string) int
 		User  func(childComplexity int, username string) int
 	}
 
@@ -79,7 +79,7 @@ type MutationResolver interface {
 	VotePost(ctx context.Context, postID string, username string, like bool) (string, error)
 }
 type QueryResolver interface {
-	Posts(ctx context.Context, username string) ([]*model.Post, error)
+	Posts(ctx context.Context, username *string) ([]*model.Post, error)
 	User(ctx context.Context, username string) (*model.User, error)
 }
 
@@ -214,7 +214,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Posts(childComplexity, args["username"].(string)), true
+		return e.complexity.Query.Posts(childComplexity, args["username"].(*string)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -329,7 +329,7 @@ type User {
 }
 
 type Query {
-  posts(username: String!): [Post!]!
+  posts(username: String): [Post!]!
   user(username: String!): User!
 }
 
@@ -439,10 +439,10 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["username"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1005,7 +1005,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Posts(rctx, args["username"].(string))
+		return ec.resolvers.Query().Posts(rctx, args["username"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
