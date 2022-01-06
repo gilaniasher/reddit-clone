@@ -37,6 +37,7 @@ type PostDdb struct {
 	CreationTimestamp string
 	Poster            string
 	Likes             []*string `dynamodbav:",stringset"` // Will default to a list (not set) without this
+	Dislikes          []*string `dynamodbav:",stringset"`
 	Subreddit         string
 	HeaderText        string
 	SubText           string
@@ -51,6 +52,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 		CreationTimestamp: time.Now().Format(time.RFC3339),
 		Poster:            input.Poster,
 		Likes:             []*string{aws.String("*")}, // You can't just put an empty set so place an asterisk
+		Dislikes:          []*string{aws.String("*")},
 		Subreddit:         input.Subreddit,
 		HeaderText:        input.HeaderText,
 		SubText:           input.SubText,
@@ -105,12 +107,14 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 }
 
 func (r *mutationResolver) VotePost(ctx context.Context, postID string, username string, like bool) (string, error) {
-	var verb string
+	var likeVerb, dislikeVerb string
 
 	if like {
-		verb = "ADD"
+		likeVerb = "ADD"
+		dislikeVerb = "DELETE"
 	} else {
-		verb = "DELETE"
+		likeVerb = "DELETE"
+		dislikeVerb = "ADD"
 	}
 
 	_, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
@@ -121,7 +125,7 @@ func (r *mutationResolver) VotePost(ctx context.Context, postID string, username
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":voters": {SS: []*string{aws.String(username)}}, // SS for String Set
 		},
-		UpdateExpression: aws.String(verb + " Likes :voters"),
+		UpdateExpression: aws.String(fmt.Sprintf("%s Likes :voters %s Dislikes :voters", likeVerb, dislikeVerb)),
 	})
 
 	if err != nil {
