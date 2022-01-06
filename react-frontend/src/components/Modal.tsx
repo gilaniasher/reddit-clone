@@ -51,7 +51,7 @@ const LoginForm: React.FC = () =>  {
 const SignupForm: React.FC = () => {
 	const [username, setUsername] = useState('')
 	const [email, setEmail] = useState('')
-	const [createUser, { error, loading, called }] = useMutation<{ createUser: CreateUserResult }, { input: CreateUserInput }>(CREATE_USER)
+	const [createUser, { error, loading, called }] = useMutation<CreateUserResult, CreateUserInput>(CREATE_USER)
 
 	const initSignup = () => {
 		createUser({ variables: { input: { username, email } } })

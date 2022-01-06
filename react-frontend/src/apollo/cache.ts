@@ -7,11 +7,13 @@ export interface LocalUser {
 
 export interface LocalState {
 	modal: '' | 'login' | 'signup',
-	loggedInUser?: LocalUser
+	loggedInUser?: LocalUser,
+	showCreatePost: boolean
 }
 
 export const localStateVar = makeVar<LocalState>({
-	modal: ''
+	modal: '',
+	showCreatePost: false
 })
 
 export const cache = new InMemoryCache({

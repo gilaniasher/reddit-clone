@@ -23,7 +23,7 @@ const Post: React.FC<Props> = ({ post }) => {
 			</div>
 			<div className="w-11/12 flex flex-col p-3">
 				<div className="flex flex-row mb-2">
-					<span className="font-bold mr-1">{ subreddit }</span>
+					<span className="font-bold mr-1">r/{ subreddit }</span>
 					<span className="font-thin text-gray-500 mr-1">• Posted by { poster }</span>
 					<span className="font-thin text-gray-500">• { dayjs(timestamp).fromNow() }</span>
 				</div>	
