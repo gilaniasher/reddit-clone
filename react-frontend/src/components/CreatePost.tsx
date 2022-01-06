@@ -7,8 +7,8 @@ import { CREATE_POST, CreatePostInput, CreatePostResult } from '../apollo/mutati
 
 const CreatePost: React.FC = () => {
 	const { loggedInUser } = useReactiveVar(localStateVar)
-	const { showCreatePost } = useLocalState(localStateVar)
-	const [createPost, { called, loading, data, error }] = useMutation<CreatePostResult, CreatePostInput>(CREATE_POST)
+	const { showCreatePost, triggerReload } = useLocalState(localStateVar)
+	const [createPost, { data, error }] = useMutation<CreatePostResult, CreatePostInput>(CREATE_POST)
 
 	const [subreddit, setSubreddit] = useState('')
 	const [headerText, setHeaderText] = useState('')
@@ -41,6 +41,7 @@ const CreatePost: React.FC = () => {
 		if (!data)
 			return
 
+		triggerReload(true)
 		showCreatePost(false)
 	}, [data])
 

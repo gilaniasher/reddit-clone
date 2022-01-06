@@ -5,10 +5,12 @@ export const useLocalState = (localStateVar: ReactiveVar<LocalState>) => {
 	const setModal = (modal: 'login' | 'signup' | '') => localStateVar({ ...localStateVar(), modal })
 	const setUser = (loggedInUser?: LocalUser) => localStateVar({ ...localStateVar(), loggedInUser })
 	const showCreatePost = (visible: boolean) => localStateVar({ ...localStateVar(), showCreatePost: visible })
+	const triggerReload = (reloadPosts: boolean) => localStateVar({ ...localStateVar(), reloadPosts })
 
 	return {
 		setModal,
 		setUser,
-		showCreatePost
+		showCreatePost,
+		triggerReload
 	}
 }

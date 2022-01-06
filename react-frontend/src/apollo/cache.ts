@@ -8,12 +8,14 @@ export interface LocalUser {
 export interface LocalState {
 	modal: '' | 'login' | 'signup',
 	loggedInUser?: LocalUser,
-	showCreatePost: boolean
+	showCreatePost: boolean,
+	reloadPosts: boolean
 }
 
 export const localStateVar = makeVar<LocalState>({
 	modal: '',
-	showCreatePost: false
+	showCreatePost: false,
+	reloadPosts: false
 })
 
 export const cache = new InMemoryCache({
