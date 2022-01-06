@@ -15,13 +15,13 @@ type NewUser struct {
 }
 
 type Post struct {
-	ID         string `json:"id"`
-	Likes      int    `json:"likes"`
-	Subreddit  string `json:"subreddit"`
-	Poster     string `json:"poster"`
-	Timestamp  string `json:"timestamp"`
-	HeaderText string `json:"headerText"`
-	SubText    string `json:"subText"`
+	ID         string   `json:"id"`
+	Likes      []string `json:"likes"`
+	Subreddit  string   `json:"subreddit"`
+	Poster     string   `json:"poster"`
+	Timestamp  string   `json:"timestamp"`
+	HeaderText string   `json:"headerText"`
+	SubText    string   `json:"subText"`
 }
 
 type User struct {

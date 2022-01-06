@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,7 +36,7 @@ type PostDdb struct {
 	PostId            string
 	CreationTimestamp string
 	Poster            string
-	Likes             []string
+	Likes             []*string `dynamodbav:",stringset"` // Will default to a list (not set) without this
 	Subreddit         string
 	HeaderText        string
 	SubText           string
@@ -49,7 +50,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 		PostId:            newPostId,
 		CreationTimestamp: time.Now().Format(time.RFC3339),
 		Poster:            input.Poster,
-		Likes:             make([]string, 0),
+		Likes:             []*string{aws.String("*")}, // You can't just put an empty set so place an asterisk
 		Subreddit:         input.Subreddit,
 		HeaderText:        input.HeaderText,
 		SubText:           input.SubText,
@@ -66,6 +67,10 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (string, error) {
+	if strings.ContainsAny(input.Username, "*") {
+		return input.Username, errors.New("usernames cannot have asterisks")
+	}
+
 	// Verify that username is unique in DynamoDB
 	result, errGet := svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("usersTable-reddit-clone"),
@@ -99,6 +104,35 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	return input.Username, nil
 }
 
+func (r *mutationResolver) VotePost(ctx context.Context, postID string, username string, like bool) (string, error) {
+	var verb string
+
+	if like {
+		verb = "ADD"
+	} else {
+		verb = "DELETE"
+	}
+
+	_, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
+		TableName: aws.String("postsTable-reddit-clone"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"PostId": {S: aws.String(postID)},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":voters": {SS: []*string{aws.String(username)}}, // SS for String Set
+		},
+		UpdateExpression: aws.String(verb + " Likes :voters"),
+	})
+
+	if err != nil {
+		fmt.Printf("Error calling UpdateItem: %s\n", err)
+		return postID, errors.New("database update call failed")
+	}
+
+	fmt.Printf("Post %s has been voted on by %s\n", postID, username)
+	return postID, nil
+}
+
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	var posts []*model.Post
 	expr, _ := expression.NewBuilder().Build()
@@ -119,7 +153,7 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 		dynamodbattribute.UnmarshalMap(i, &post)
 
 		posts = append(posts, &model.Post{
-			Likes:      post.Likes,
+			Likes:      make([]string, 0), // TODO, need to turn the list that comes from ddb into a go slice
 			Subreddit:  post.Subreddit,
 			Timestamp:  post.CreationTimestamp,
 			HeaderText: post.HeaderText,

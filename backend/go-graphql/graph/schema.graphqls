@@ -4,8 +4,8 @@
 
 type Post {
   id: ID!
-  likes: Int!
-  subreddit: [String!]!
+  likes: [String!]!
+  subreddit: String!
   poster: String!
   timestamp: String!
   headerText: String!
@@ -37,4 +37,5 @@ input NewUser {
 type Mutation {
   createPost(input: NewPost!): String!
   createUser(input: NewUser!): String! 
+  votePost(postId: String!, username: String!, like: Boolean!): String!
 }
