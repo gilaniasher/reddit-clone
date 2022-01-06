@@ -13,6 +13,8 @@ const PostContainer: React.FC = () => {
 	const { showCreatePost, reloadPosts } = useReactiveVar(localStateVar)
 	const { triggerReload } = useLocalState(localStateVar)	
 
+	const sortPosts = () => (data) ? [...data.posts].sort((a, b) => b.timestamp.localeCompare(a.timestamp)) : []
+
 	useEffect(() => {
 		if (reloadPosts) {
 			refetch()
@@ -31,10 +33,10 @@ const PostContainer: React.FC = () => {
 	}
 
 	return (
-		<div className="flex flex-col w-full items-center py-5">
+		<div className="flex flex-col w-full items-center py-5 overflow-y-scroll">
 			{ showCreatePost && <CreatePost /> }
 			{ data.posts.length === 0 && <p>No Posts to Show</p> }
-			{ data.posts.map((p, idx) => 
+			{ sortPosts().map((p, idx) => 
 					<ShortPost key={idx} post={p} />
 			)}
 		</div>
