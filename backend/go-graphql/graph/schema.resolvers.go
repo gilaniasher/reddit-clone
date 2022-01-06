@@ -43,6 +43,16 @@ type PostDdb struct {
 	SubText           string
 }
 
+func contains(s []*string, target string) bool {
+	for _, x := range s {
+		if target == *x {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (string, error) {
 	// Add this post to DynamoDB
 	newPostId := uuid.New().String()
@@ -137,7 +147,7 @@ func (r *mutationResolver) VotePost(ctx context.Context, postID string, username
 	return postID, nil
 }
 
-func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+func (r *queryResolver) Posts(ctx context.Context, username string) ([]*model.Post, error) {
 	var posts []*model.Post
 	expr, _ := expression.NewBuilder().Build()
 
@@ -158,12 +168,16 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 		dynamodbattribute.UnmarshalMap(i, &post)
 
 		posts = append(posts, &model.Post{
-			Likes:      make([]string, 0), // TODO, need to turn the list that comes from ddb into a go slice
-			Subreddit:  post.Subreddit,
-			Timestamp:  post.CreationTimestamp,
-			HeaderText: post.HeaderText,
-			SubText:    post.SubText,
-			Poster:     post.Poster,
+			ID:           post.PostId,
+			Likes:        len(post.Likes) - 1,
+			Dislikes:     len(post.Dislikes) - 1,
+			UserLiked:    contains(post.Likes, username),    // Should figure out how to query the set
+			UserDisliked: contains(post.Dislikes, username), // from DDB instead of this manual search
+			Subreddit:    post.Subreddit,
+			Timestamp:    post.CreationTimestamp,
+			HeaderText:   post.HeaderText,
+			SubText:      post.SubText,
+			Poster:       post.Poster,
 		})
 	}
 

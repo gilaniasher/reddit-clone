@@ -3,7 +3,11 @@ import { gql } from '@apollo/client'
 /* Loading Recent Posts */
 
 export interface ShortPostData {
+	id: string,
 	likes: number,
+	dislikes: number,
+	userLiked: boolean,
+	userDisliked: boolean,
 	subreddit: string,
 	poster: string,
 	timestamp: string,
@@ -18,7 +22,11 @@ export interface RecentPostsResult {
 export const RECENT_POSTS = gql`
 	query {
 		posts {
+			id
 			likes
+			dislikes
+			userLiked
+			userDisliked
 			subreddit
 			poster
 			timestamp

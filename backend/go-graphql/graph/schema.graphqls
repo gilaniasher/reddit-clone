@@ -4,7 +4,10 @@
 
 type Post {
   id: ID!
-  likes: [String!]!
+  likes: Int!
+  dislikes: Int!
+  userLiked: Boolean!
+  userDisliked: Boolean!
   subreddit: String!
   poster: String!
   timestamp: String!
@@ -18,7 +21,7 @@ type User {
 }
 
 type Query {
-  posts: [Post!]!
+  posts(username: String!): [Post!]!
   user(username: String!): User!
 }
 
