@@ -35,7 +35,7 @@ type PostDdb struct {
 	PostId            string
 	CreationTimestamp string
 	Poster            string
-	Likes             int
+	Likes             []string
 	Subreddit         string
 	HeaderText        string
 	SubText           string
@@ -49,7 +49,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 		PostId:            newPostId,
 		CreationTimestamp: time.Now().Format(time.RFC3339),
 		Poster:            input.Poster,
-		Likes:             0,
+		Likes:             make([]string, 0),
 		Subreddit:         input.Subreddit,
 		HeaderText:        input.HeaderText,
 		SubText:           input.SubText,

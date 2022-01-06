@@ -5,7 +5,7 @@
 type Post {
   id: ID!
   likes: Int!
-  subreddit: String!
+  subreddit: [String!]!
   poster: String!
   timestamp: String!
   headerText: String!
