@@ -150,7 +150,7 @@ func (r *queryResolver) User(ctx context.Context, username string) (*model.User,
 	}
 
 	dynamodbattribute.UnmarshalMap(result.Item, &userDdb)
-	user.Username = userDdb.Email
+	user.Username = userDdb.Username
 	user.Email = userDdb.Email
 
 	return &user, nil

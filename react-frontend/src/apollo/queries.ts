@@ -35,8 +35,10 @@ export interface UserInput {
 }
 
 export interface UserResponse {
-	username: string,
-	email: string
+	user: {
+		username: string,
+		email: string
+	}
 }
 
 export const GET_USER = gql`

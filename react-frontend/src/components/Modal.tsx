@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { XIcon } from '@heroicons/react/outline'
 
 import { useLazyQuery, useMutation, useReactiveVar } from '@apollo/client'
@@ -11,11 +11,19 @@ import { GET_USER, UserInput, UserResponse } from '../apollo/queries'
 const LoginForm: React.FC = () =>  {
 	const [username, setUsername] = useState('')
 	const [getUser, { called, loading, data, error }] = useLazyQuery<UserResponse, UserInput>(GET_USER)
+	const { setUser, setModal } = useLocalState(localStateVar)
 
 	const initLogin = () => {
 		getUser({ variables: { username } })
 		setUsername('')
 	}
+
+	useEffect(() => {
+		if (data?.user) {
+			setUser(data.user)
+			setModal('')
+		}
+	}, [data])
 
 	return (
 		<div className="flex text-center flex-col items-center">
@@ -26,7 +34,8 @@ const LoginForm: React.FC = () =>  {
 				value={username}
 				onChange={e => setUsername(e.target.value)}
 			/>
-			<button onClick={initLogin} className="rounded-lg w-24 h-10 bg-cyan-300 text-black my-5">
+			<button onClick={initLogin} className="rounded-lg w-24 h-10 bg-cyan-300 text-black my-5 flex items-center justify-center">
+				{ loading && <div className="animate-spin h-5 w-5 rounded-full border-b-2 border-gray-900 mr-3" /> }
 				Log In!
 			</button>
 			{ (error !== undefined) &&
