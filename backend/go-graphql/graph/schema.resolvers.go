@@ -138,9 +138,10 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	expr, _ := expression.NewBuilder().Build()
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
+		TableName:                 aws.String("postsTable-reddit-clone"),
+		IndexName:                 aws.String("timestamp"),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-		TableName:                 aws.String("postsTable-reddit-clone"),
 		Limit:                     aws.Int64(10),
 	})
 
