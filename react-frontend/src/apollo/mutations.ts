@@ -39,3 +39,21 @@ export const CREATE_POST = gql`
 		createPost(input: $input)
 	}
 `
+
+/* Upvote/Downvote a Post */
+
+export interface VotePostInput {
+	postId: string,
+	username: string,
+	like: boolean
+}
+
+export interface VotePostResult {
+	postId: string
+}
+
+export const VOTE_POST = gql`
+	mutation votePost($postId: String!, $username: String!, $like: Boolean!) {
+		votePost(postId: $postId, username: $username, like: $like)
+	}
+`

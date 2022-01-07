@@ -175,7 +175,7 @@ func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.P
 		} else {
 			// Should figure out how to query the set from DDB instead of this manual search
 			userLiked = contains(post.Likes, *username)
-			userDisliked = contains(post.Likes, *username)
+			userDisliked = contains(post.Dislikes, *username)
 		}
 
 		posts = append(posts, &model.Post{
