@@ -41,6 +41,7 @@ type PostDdb struct {
 	Subreddit         string
 	HeaderText        string
 	SubText           string
+	Replies           []*string // Top level commend ids
 }
 
 type CommentDdb struct {
@@ -48,9 +49,9 @@ type CommentDdb struct {
 	Content           string
 	Poster            string
 	CreationTimestamp string
-	ParentId          *string // If this comment is a reply, it will have a parent comment id
-	Likes             int
-	Dislikes          int
+	ParentId          *string   // If this comment is a reply, it will have a parent comment id
+	Likes             []*string `dynamodbav:",stringset"`
+	Dislikes          []*string `dynamodbav:",stringset"`
 	Replies           []*string // Comment ids of replies
 }
 
@@ -191,8 +192,8 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 		Poster:            posterID,
 		CreationTimestamp: curTimestamp,
 		ParentId:          parentID,
-		Likes:             0,
-		Dislikes:          0,
+		Likes:             []*string{aws.String("*")},
+		Dislikes:          []*string{aws.String("*")},
 		Replies:           []*string{},
 	})
 
@@ -332,12 +333,117 @@ func (r *queryResolver) User(ctx context.Context, username string) (*model.User,
 	return &user, nil
 }
 
-func (r *queryResolver) Comments(ctx context.Context, postID string) ([]*model.Comment, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) Comments(ctx context.Context, postID string, username *string) ([]*model.Comment, error) {
+	// Retrieve post to get top level comment IDs
+	result, err := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String("postsTable-reddit-clone"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"PostId": {S: aws.String(postID)},
+		},
+		ProjectionExpression: aws.String("Replies"),
+	})
+
+	if err != nil {
+		return nil, errors.New("database get call failed")
+	} else if result.Item == nil {
+		return nil, errors.New("post, " + postID + ", does not exist")
+	}
+
+	postDdb := PostDdb{}
+	dynamodbattribute.UnmarshalMap(result.Item, &postDdb)
+
+	if len(postDdb.Replies) == 0 {
+		fmt.Printf("Succesfully retrieved 0 comments for post %s\n", postID)
+		return nil, nil
+	}
+
+	// Batch Get these top level comments
+	commentKeys := []map[string]*dynamodb.AttributeValue{}
+
+	for _, commentId := range postDdb.Replies {
+		commentKeys = append(commentKeys, map[string]*dynamodb.AttributeValue{
+			"CommentId": {S: commentId},
+		})
+	}
+
+	batchResult, err := svc.BatchGetItem(&dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			"commentsTable-reddit-clone": {Keys: commentKeys},
+		},
+	})
+
+	if err != nil {
+		fmt.Printf("Batch get failed for post %s\n", postID)
+		return nil, errors.New("database batch get items call failed")
+	}
+
+	commentsDdb := []*CommentDdb{}
+	dynamodbattribute.UnmarshalListOfMaps(batchResult.Responses["commentsTable-reddit-clone"], &commentsDdb)
+	comments := []*model.Comment{}
+
+	for _, commentDdb := range commentsDdb {
+		var userLiked, userDisliked bool
+
+		if username != nil {
+			userLiked = contains(commentDdb.Likes, *username)
+			userDisliked = contains(commentDdb.Dislikes, *username)
+		}
+
+		comments = append(comments, &model.Comment{
+			ID:           commentDdb.CommentId,
+			ParentID:     nil,
+			Content:      commentDdb.Content,
+			Poster:       commentDdb.Poster,
+			Timestamp:    commentDdb.CreationTimestamp,
+			Likes:        len(commentDdb.Likes) - 1,
+			Dislikes:     len(commentDdb.Dislikes) - 1,
+			UserLiked:    userLiked,
+			UserDisliked: userDisliked,
+			Replies:      []*model.Comment{}, // TODO need to add support for getting replies
+		})
+	}
+
+	fmt.Printf("Succesfully retrieved %d comments for post %s\n", len(comments), postID)
+	return comments, nil
 }
 
-func (r *queryResolver) Comment(ctx context.Context, commentID string) (*model.Comment, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) Comment(ctx context.Context, commentID string, username *string) (*model.Comment, error) {
+	result, err := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String("commentsTable-reddit-clone"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"CommentId": {S: aws.String(commentID)},
+		},
+	})
+
+	if err != nil {
+		return nil, errors.New("database get call failed")
+	} else if result.Item == nil {
+		return nil, errors.New("comment, " + commentID + ", does not exist")
+	}
+
+	commentDdb := CommentDdb{}
+	dynamodbattribute.UnmarshalMap(result.Item, &commentDdb)
+	var userLiked, userDisliked bool
+
+	if username != nil {
+		userLiked = contains(commentDdb.Likes, *username)
+		userDisliked = contains(commentDdb.Dislikes, *username)
+	}
+
+	comment := model.Comment{
+		ID:           commentDdb.CommentId,
+		ParentID:     commentDdb.ParentId,
+		Content:      commentDdb.Content,
+		Poster:       commentDdb.Poster,
+		Timestamp:    commentDdb.CreationTimestamp,
+		Likes:        len(commentDdb.Likes) - 1,
+		Dislikes:     len(commentDdb.Dislikes) - 1,
+		UserLiked:    userLiked,
+		UserDisliked: userDisliked,
+		Replies:      []*model.Comment{}, // TODO implement replies
+	}
+
+	return &comment, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

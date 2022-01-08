@@ -77,8 +77,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Comment  func(childComplexity int, commentID string) int
-		Comments func(childComplexity int, postID string) int
+		Comment  func(childComplexity int, commentID string, username *string) int
+		Comments func(childComplexity int, postID string, username *string) int
 		Post     func(childComplexity int, postID string, username *string) int
 		Posts    func(childComplexity int, username *string) int
 		User     func(childComplexity int, username string) int
@@ -100,8 +100,8 @@ type QueryResolver interface {
 	Posts(ctx context.Context, username *string) ([]*model.Post, error)
 	Post(ctx context.Context, postID string, username *string) (*model.Post, error)
 	User(ctx context.Context, username string) (*model.User, error)
-	Comments(ctx context.Context, postID string) ([]*model.Comment, error)
-	Comment(ctx context.Context, commentID string) (*model.Comment, error)
+	Comments(ctx context.Context, postID string, username *string) ([]*model.Comment, error)
+	Comment(ctx context.Context, commentID string, username *string) (*model.Comment, error)
 }
 
 type executableSchema struct {
@@ -317,7 +317,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Comment(childComplexity, args["commentId"].(string)), true
+		return e.complexity.Query.Comment(childComplexity, args["commentId"].(string), args["username"].(*string)), true
 
 	case "Query.comments":
 		if e.complexity.Query.Comments == nil {
@@ -329,7 +329,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Comments(childComplexity, args["postId"].(string)), true
+		return e.complexity.Query.Comments(childComplexity, args["postId"].(string), args["username"].(*string)), true
 
 	case "Query.post":
 		if e.complexity.Query.Post == nil {
@@ -496,8 +496,8 @@ type Query {
   posts(username: String): [Post!]!
   post(postId: String!, username: String): Post!
   user(username: String!): User!
-  comments(postId: String!): [Comment!]!
-  comment(commentId: String!): Comment!
+  comments(postId: String!, username: String): [Comment!]!
+  comment(commentId: String!, username: String): Comment!
 }
 
 type Mutation {
@@ -646,6 +646,15 @@ func (ec *executionContext) field_Query_comment_args(ctx context.Context, rawArg
 		}
 	}
 	args["commentId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg1
 	return args, nil
 }
 
@@ -661,6 +670,15 @@ func (ec *executionContext) field_Query_comments_args(ctx context.Context, rawAr
 		}
 	}
 	args["postId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg1
 	return args, nil
 }
 
@@ -1772,7 +1790,7 @@ func (ec *executionContext) _Query_comments(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Comments(rctx, args["postId"].(string))
+		return ec.resolvers.Query().Comments(rctx, args["postId"].(string), args["username"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1814,7 +1832,7 @@ func (ec *executionContext) _Query_comment(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Comment(rctx, args["commentId"].(string))
+		return ec.resolvers.Query().Comment(rctx, args["commentId"].(string), args["username"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

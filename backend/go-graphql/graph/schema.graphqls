@@ -49,8 +49,8 @@ type Query {
   posts(username: String): [Post!]!
   post(postId: String!, username: String): Post!
   user(username: String!): User!
-  comments(postId: String!): [Comment!]!
-  comment(commentId: String!): Comment!
+  comments(postId: String!, username: String): [Comment!]!
+  comment(commentId: String!, username: String): Comment!
 }
 
 type Mutation {
