@@ -16,9 +16,7 @@ export interface LocalState {
 export const localStateVar = makeVar<LocalState>({
 	modal: '',
 	showCreatePost: false,
-	reloadPosts: false,
-	activePostId: '123'
-
+	reloadPosts: false
 })
 
 export const cache = new InMemoryCache({

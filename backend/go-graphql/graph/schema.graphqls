@@ -20,9 +20,17 @@ type User {
   email: String!
 }
 
-type Query {
-  posts(username: String): [Post!]!
-  user(username: String!): User!
+type Comment {
+  id: ID!
+  parentId: ID
+  content: String!
+  poster: String!
+  timestamp: String!
+  likes: Int!
+  dislikes: Int!
+  userLiked: Boolean!
+  userDisliked: Boolean!
+  replies: [Comment!]!
 }
 
 input NewPost {
@@ -37,8 +45,17 @@ input NewUser {
   email: String!
 }
 
+type Query {
+  posts(username: String): [Post!]!
+  post(postId: String!, username: String): Post!
+  user(username: String!): User!
+  comments(postId: String!): [Comment!]!
+  comment(commentId: String!): Comment!
+}
+
 type Mutation {
   createPost(input: NewPost!): String!
   createUser(input: NewUser!): String! 
   votePost(postId: String!, username: String!, like: Boolean!): String!
+  createComment(postId: String!, posterId: String!, parentId: String, content: String!): Comment!
 }

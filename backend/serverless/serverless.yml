@@ -49,6 +49,19 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+    commentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: commentsTable-reddit-clone
+        AttributeDefinitions:
+          - AttributeName: CommentId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: CommentId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
 
 custom:
   dynamodb:

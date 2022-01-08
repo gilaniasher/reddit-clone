@@ -2,6 +2,19 @@
 
 package model
 
+type Comment struct {
+	ID           string     `json:"id"`
+	ParentID     *string    `json:"parentId"`
+	Content      string     `json:"content"`
+	Poster       string     `json:"poster"`
+	Timestamp    string     `json:"timestamp"`
+	Likes        int        `json:"likes"`
+	Dislikes     int        `json:"dislikes"`
+	UserLiked    bool       `json:"userLiked"`
+	UserDisliked bool       `json:"userDisliked"`
+	Replies      []*Comment `json:"replies"`
+}
+
 type NewPost struct {
 	Subreddit  string `json:"subreddit"`
 	Poster     string `json:"poster"`
