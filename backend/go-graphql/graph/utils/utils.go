@@ -18,3 +18,31 @@ func Contains(s []*string, target string) bool {
 
 	return false
 }
+
+/**
+ * Manually searched likes and dislikes for the username
+ * TODO: Ideally we would just query the set from dynamodb with the username
+ */
+func UserLikes(likes []*string, dislikes []*string, username *string) (bool, bool) {
+	if username != nil {
+		return Contains(likes, *username), Contains(dislikes, *username)
+	}
+
+	return false, false
+}
+
+/**
+ * Takes a slice of comment ids and formats them so they can be passed to
+ * the BatchGetItem query
+ */
+func FormatBatchComments(commentIds []*string) []map[string]*dynamodb.AttributeValue {
+	commentKeys := []map[string]*dynamodb.AttributeValue{}
+
+	for _, commentId := range commentIds {
+		commentKeys = append(commentKeys, map[string]*dynamodb.AttributeValue{
+			"CommentId": {S: commentId},
+		})
+	}
+
+	return commentKeys
+}

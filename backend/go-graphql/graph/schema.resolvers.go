@@ -10,31 +10,29 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
-
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/generated"
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/model"
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/utils"
+	"github.com/google/uuid"
 )
 
-func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (string, error) {
+func (r *mutationResolver) CreatePost(ctx context.Context, subreddit string, poster string, headerText string, subText string) (string, error) {
 	// Add this post to DynamoDB
 	newPostId := uuid.New().String()
 
 	av, _ := dynamodbattribute.MarshalMap(utils.PostDdb{
 		PostId:            newPostId,
 		CreationTimestamp: time.Now().Format(time.RFC3339),
-		Poster:            input.Poster,
+		Poster:            poster,
 		Likes:             []*string{aws.String("*")}, // You can't just put an empty set so place an asterisk
 		Dislikes:          []*string{aws.String("*")},
-		Subreddit:         input.Subreddit,
-		HeaderText:        input.HeaderText,
-		SubText:           input.SubText,
+		Subreddit:         subreddit,
+		HeaderText:        headerText,
+		SubText:           subText,
 	})
 
 	_, err := utils.SVC.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("postsTable-reddit-clone")})
@@ -47,42 +45,42 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 	return newPostId, nil
 }
 
-func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (string, error) {
-	if strings.ContainsAny(input.Username, "*") {
-		return input.Username, errors.New("usernames cannot have asterisks")
+func (r *mutationResolver) CreateUser(ctx context.Context, username string, email string) (string, error) {
+	if strings.ContainsAny(username, "*") {
+		return username, errors.New("usernames cannot have asterisks")
 	}
 
 	// Verify that username is unique in DynamoDB
 	result, errGet := utils.SVC.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("usersTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
-			"Username": {S: aws.String(input.Username)},
+			"Username": {S: aws.String(username)},
 		},
 	})
 
 	if errGet != nil {
-		return input.Username, errors.New("database get call failed")
+		return username, errors.New("database get call failed")
 	}
 
 	if result.Item != nil {
-		return input.Username, errors.New("this username has been taken")
+		return username, errors.New("this username has been taken")
 	}
 
 	// Add user to DynamoDB
 	av, _ := dynamodbattribute.MarshalMap(utils.UserDdb{
-		Username: input.Username,
-		Email:    input.Email,
+		Username: username,
+		Email:    email,
 	})
 
 	_, errPut := utils.SVC.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("usersTable-reddit-clone")})
 
 	if errPut != nil {
 		fmt.Printf("Error calling PutItem: %s\n", errPut)
-		return input.Username, errors.New("database put call failed")
+		return username, errors.New("database put call failed")
 	}
 
-	fmt.Printf("Successfully added user: %s\n", input.Username)
-	return input.Username, nil
+	fmt.Printf("Successfully added user: %s\n", username)
+	return username, nil
 }
 
 func (r *mutationResolver) VotePost(ctx context.Context, postID string, username string, like bool) (string, error) {
@@ -197,14 +195,7 @@ func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.P
 	for _, i := range result.Items {
 		post := utils.PostDdb{}
 		dynamodbattribute.UnmarshalMap(i, &post)
-
-		var userLiked, userDisliked bool
-
-		if username != nil {
-			// Should figure out how to query the set from DDB instead of this manual search
-			userLiked = utils.Contains(post.Likes, *username)
-			userDisliked = utils.Contains(post.Dislikes, *username)
-		}
+		userLiked, userDisliked := utils.UserLikes(post.Likes, post.Dislikes, username)
 
 		posts = append(posts, &model.Post{
 			ID:           post.PostId,
@@ -234,7 +225,6 @@ func (r *queryResolver) Post(ctx context.Context, postID string, username *strin
 
 	postDdb := utils.PostDdb{}
 	post := model.Post{}
-	var userLiked, userDisliked bool
 
 	if err != nil {
 		return &post, errors.New("database get call failed")
@@ -243,12 +233,7 @@ func (r *queryResolver) Post(ctx context.Context, postID string, username *strin
 	}
 
 	dynamodbattribute.UnmarshalMap(result.Item, &postDdb)
-
-	if username != nil {
-		// Should figure out how to query the set from DDB instead of this manual search
-		userLiked = utils.Contains(postDdb.Likes, *username)
-		userDisliked = utils.Contains(postDdb.Dislikes, *username)
-	}
+	userLiked, userDisliked := utils.UserLikes(postDdb.Likes, postDdb.Dislikes, username)
 
 	post = model.Post{
 		ID:           postDdb.PostId,
@@ -279,8 +264,6 @@ func (r *queryResolver) User(ctx context.Context, username string) (*model.User,
 
 	if err != nil {
 		return &user, errors.New("database get call failed")
-	} else if result.Item == nil {
-		return &user, errors.New("user, " + username + ", does not exist")
 	}
 
 	dynamodbattribute.UnmarshalMap(result.Item, &userDdb)
@@ -302,8 +285,6 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 
 	if err != nil {
 		return nil, errors.New("database get call failed")
-	} else if result.Item == nil {
-		return nil, errors.New("post, " + postID + ", does not exist")
 	}
 
 	postDdb := utils.PostDdb{}
@@ -315,17 +296,9 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 	}
 
 	// Batch Get these top level comments
-	commentKeys := []map[string]*dynamodb.AttributeValue{}
-
-	for _, commentId := range postDdb.Replies {
-		commentKeys = append(commentKeys, map[string]*dynamodb.AttributeValue{
-			"CommentId": {S: commentId},
-		})
-	}
-
 	batchResult, err := utils.SVC.BatchGetItem(&dynamodb.BatchGetItemInput{
 		RequestItems: map[string]*dynamodb.KeysAndAttributes{
-			"commentsTable-reddit-clone": {Keys: commentKeys},
+			"commentsTable-reddit-clone": {Keys: utils.FormatBatchComments(postDdb.Replies)},
 		},
 	})
 
@@ -339,12 +312,7 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 	comments := []*model.Comment{}
 
 	for _, commentDdb := range commentsDdb {
-		var userLiked, userDisliked bool
-
-		if username != nil {
-			userLiked = utils.Contains(commentDdb.Likes, *username)
-			userDisliked = utils.Contains(commentDdb.Dislikes, *username)
-		}
+		userLiked, userDisliked := utils.UserLikes(commentDdb.Likes, commentDdb.Dislikes, username)
 
 		comments = append(comments, &model.Comment{
 			ID:           commentDdb.CommentId,
@@ -374,18 +342,11 @@ func (r *queryResolver) Comment(ctx context.Context, commentID string, username 
 
 	if err != nil {
 		return nil, errors.New("database get call failed")
-	} else if result.Item == nil {
-		return nil, errors.New("comment, " + commentID + ", does not exist")
 	}
 
 	commentDdb := utils.CommentDdb{}
 	dynamodbattribute.UnmarshalMap(result.Item, &commentDdb)
-	var userLiked, userDisliked bool
-
-	if username != nil {
-		userLiked = utils.Contains(commentDdb.Likes, *username)
-		userDisliked = utils.Contains(commentDdb.Dislikes, *username)
-	}
+	userLiked, userDisliked := utils.UserLikes(commentDdb.Likes, commentDdb.Dislikes, username)
 
 	comment := model.Comment{
 		ID:           commentDdb.CommentId,

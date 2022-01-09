@@ -3,10 +3,8 @@ import { gql } from '@apollo/client'
 /* Create New User (Simplified) */
 
 export interface CreateUserInput {
-	input: {
-		username: string,
-		email: string
-	}
+	username: string,
+	email: string
 }
 
 export interface CreateUserResult {
@@ -14,20 +12,18 @@ export interface CreateUserResult {
 }
 
 export const CREATE_USER = gql`
-	mutation createUser($input: NewUser!) {
-		createUser(input: $input)
+	mutation createUser($username: String!, $email: String!) {
+		createUser(username: $username, email: $email)
 	}
 `
 
 /* Create New Post */
 
 export interface CreatePostInput {
-	input: {
-		subreddit: string,
-		poster: string,
-		headerText: string,
-		subText: string
-	}
+	subreddit: string,
+	poster: string,
+	headerText: string,
+	subText: string
 }
 
 export interface CreatePostResult {
@@ -35,8 +31,8 @@ export interface CreatePostResult {
 }
 
 export const CREATE_POST = gql`
-	mutation createPost($input: NewPost!)	{
-		createPost(input: $input)
+	mutation createPost($subreddit: String!, $poster: String!, $headerText: String!, $subText: String!)	{
+		createPost(subreddit: $subreddit, poster: $poster, headerText: $headerText, subText: $subText)
 	}
 `
 

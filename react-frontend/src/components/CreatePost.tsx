@@ -21,7 +21,7 @@ const CreatePost: React.FC = () => {
 			return
 		}
 		
-		createPost({ variables: { input: { subreddit, headerText, subText, poster: loggedInUser.username } } })
+		createPost({ variables: { subreddit, headerText, subText, poster: loggedInUser.username } })
 	}
 
 	const cancel = () => {

@@ -58,8 +58,8 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateComment func(childComplexity int, postID string, posterID string, parentID *string, content string) int
-		CreatePost    func(childComplexity int, input model.NewPost) int
-		CreateUser    func(childComplexity int, input model.NewUser) int
+		CreatePost    func(childComplexity int, subreddit string, poster string, headerText string, subText string) int
+		CreateUser    func(childComplexity int, username string, email string) int
 		VotePost      func(childComplexity int, postID string, username string, like bool) int
 	}
 
@@ -91,8 +91,8 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreatePost(ctx context.Context, input model.NewPost) (string, error)
-	CreateUser(ctx context.Context, input model.NewUser) (string, error)
+	CreatePost(ctx context.Context, subreddit string, poster string, headerText string, subText string) (string, error)
+	CreateUser(ctx context.Context, username string, email string) (string, error)
 	VotePost(ctx context.Context, postID string, username string, like bool) (string, error)
 	CreateComment(ctx context.Context, postID string, posterID string, parentID *string, content string) (*model.Comment, error)
 }
@@ -211,7 +211,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreatePost(childComplexity, args["input"].(model.NewPost)), true
+		return e.complexity.Mutation.CreatePost(childComplexity, args["subreddit"].(string), args["poster"].(string), args["headerText"].(string), args["subText"].(string)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -223,7 +223,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.NewUser)), true
+		return e.complexity.Mutation.CreateUser(childComplexity, args["username"].(string), args["email"].(string)), true
 
 	case "Mutation.votePost":
 		if e.complexity.Mutation.VotePost == nil {
@@ -445,9 +445,9 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph/schema.graphqls", Input: `# GraphQL schema example
-# Need to run this before regenerating: go get -u github.com/99designs/gqlgen/cmd
-# https://gqlgen.com/getting-started/
+	{Name: "graph/schema.graphqls", Input: `# Commands to regenerate resolvers for updated schema: 
+#   go get -u github.com/99designs/gqlgen/cmd
+#   go run github.com/99designs/gqlgen generate
 
 type Post {
   id: ID!
@@ -480,18 +480,6 @@ type Comment {
   replies: [Comment!]!
 }
 
-input NewPost {
-  subreddit: String!
-  poster: String!
-  headerText: String!
-  subText: String!
-}
-
-input NewUser {
-  username: String!
-  email: String!
-}
-
 type Query {
   posts(username: String): [Post!]!
   post(postId: String!, username: String): Post!
@@ -501,8 +489,8 @@ type Query {
 }
 
 type Mutation {
-  createPost(input: NewPost!): String!
-  createUser(input: NewUser!): String! 
+  createPost(subreddit: String!, poster: String!, headerText: String!, subText: String!): String!
+  createUser(username: String!, email: String!): String! 
   votePost(postId: String!, username: String!, like: Boolean!): String!
   createComment(postId: String!, posterId: String!, parentId: String, content: String!): Comment!
 }
@@ -559,30 +547,66 @@ func (ec *executionContext) field_Mutation_createComment_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.NewPost
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNNewPost2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐNewPost(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["subreddit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subreddit"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["subreddit"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["poster"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("poster"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["poster"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["headerText"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("headerText"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["headerText"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["subText"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subText"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subText"] = arg3
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.NewUser
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNNewUser2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐNewUser(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["username"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
 	return args, nil
 }
 
@@ -1146,7 +1170,7 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreatePost(rctx, args["input"].(model.NewPost))
+		return ec.resolvers.Mutation().CreatePost(rctx, args["subreddit"].(string), args["poster"].(string), args["headerText"].(string), args["subText"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1188,7 +1212,7 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateUser(rctx, args["input"].(model.NewUser))
+		return ec.resolvers.Mutation().CreateUser(rctx, args["username"].(string), args["email"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3112,84 +3136,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj interface{}) (model.NewPost, error) {
-	var it model.NewPost
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	for k, v := range asMap {
-		switch k {
-		case "subreddit":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subreddit"))
-			it.Subreddit, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "poster":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("poster"))
-			it.Poster, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "headerText":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("headerText"))
-			it.HeaderText, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "subText":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subText"))
-			it.SubText, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj interface{}) (model.NewUser, error) {
-	var it model.NewUser
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	for k, v := range asMap {
-		switch k {
-		case "username":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "email":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			it.Email, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -3868,16 +3814,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) unmarshalNNewPost2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐNewPost(ctx context.Context, v interface{}) (model.NewPost, error) {
-	res, err := ec.unmarshalInputNewPost(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNNewUser2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐNewUser(ctx context.Context, v interface{}) (model.NewUser, error) {
-	res, err := ec.unmarshalInputNewUser(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPost2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {

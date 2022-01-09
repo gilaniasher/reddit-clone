@@ -15,18 +15,6 @@ type Comment struct {
 	Replies      []*Comment `json:"replies"`
 }
 
-type NewPost struct {
-	Subreddit  string `json:"subreddit"`
-	Poster     string `json:"poster"`
-	HeaderText string `json:"headerText"`
-	SubText    string `json:"subText"`
-}
-
-type NewUser struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-}
-
 type Post struct {
 	ID           string `json:"id"`
 	Likes        int    `json:"likes"`

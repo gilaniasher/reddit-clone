@@ -33,18 +33,6 @@ type Comment {
   replies: [Comment!]!
 }
 
-input NewPost {
-  subreddit: String!
-  poster: String!
-  headerText: String!
-  subText: String!
-}
-
-input NewUser {
-  username: String!
-  email: String!
-}
-
 type Query {
   posts(username: String): [Post!]!
   post(postId: String!, username: String): Post!
@@ -54,8 +42,8 @@ type Query {
 }
 
 type Mutation {
-  createPost(input: NewPost!): String!
-  createUser(input: NewUser!): String! 
+  createPost(subreddit: String!, poster: String!, headerText: String!, subText: String!): String!
+  createUser(username: String!, email: String!): String! 
   votePost(postId: String!, username: String!, like: Boolean!): String!
   createComment(postId: String!, posterId: String!, parentId: String, content: String!): Comment!
 }
