@@ -1,4 +1,4 @@
-import { CommentData } from '../components/LongPost'
+import { CommentData } from '../apollo/queries'
 
 export const postsData = [
 	{
@@ -29,7 +29,7 @@ export const postsData = [
 
 export const comments: CommentData[] = [
 	{
-		commentId: '2',
+		id: '2',
 		content: 'this is so lame',
 		poster: 'jack',
 		timestamp: '2022-01-07T22:13:24+00:00',
@@ -40,7 +40,7 @@ export const comments: CommentData[] = [
 		replies: []
 	},
 	{
-		commentId: '0',
+		id: '0',
 		content: 'wow this is so cool',
 		poster: 'joe',
 		timestamp: '2022-01-07T22:13:24+00:00',
@@ -50,7 +50,7 @@ export const comments: CommentData[] = [
 		userDisliked: false,
 		replies: [
 			{
-				commentId: '1',
+				id: '1',
 				content: 'wow this is so cool',
 				poster: 'joe',
 				timestamp: '2022-01-07T22:13:24+00:00',
@@ -59,7 +59,7 @@ export const comments: CommentData[] = [
 				userLiked: false,
 				userDisliked: false,
 				replies: [{
-					commentId: '3',
+					id: '3',
 					content: 'woahhh',
 					poster: 'james',
 					timestamp: '2022-01-07T22:13:24+00:00',
@@ -71,7 +71,7 @@ export const comments: CommentData[] = [
 				}]
 			},
 			{
-				commentId: '4',
+				id: '4',
 				content: 'blahh',
 				poster: 'jil',
 				timestamp: '2022-01-07T22:13:24+00:00',

@@ -1,7 +1,7 @@
 import React from 'react'
-import { CommentData } from './LongPost'
 import { ArrowSmUpIcon, ArrowSmDownIcon, ChatAltIcon } from '@heroicons/react/outline'
 import { formatTime, formatLikes } from '../utils/utils'
+import { CommentData } from '../apollo/queries'
 
 interface Props {
 	data: CommentData
@@ -9,7 +9,7 @@ interface Props {
 
 const Comment: React.FC<Props> = ({ data }) => {
 	const {
-		commentId, content, poster, replies, timestamp,
+		content, poster, replies, timestamp,
 		likes, dislikes, userLiked, userDisliked,
 	} = data
 

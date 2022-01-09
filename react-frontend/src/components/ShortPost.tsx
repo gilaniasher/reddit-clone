@@ -14,12 +14,12 @@ interface Props {
 
 const Post: React.FC<Props> = ({ post }) => {
 	const {
-		subreddit, poster, timestamp, headerText, subText,
+		id, subreddit, poster, timestamp, headerText, subText,
 		likes, dislikes, userLiked, userDisliked
 	} = post
 
 	const { loggedInUser } = useReactiveVar(localStateVar)
-	const { triggerReload } = useLocalState(localStateVar)
+	const { triggerReload, setActivePost } = useLocalState(localStateVar)
 	const [votePost, { called, loading, error }] = useMutation<VotePostResult, VotePostInput>(VOTE_POST)
 
 	useEffect(() => {
@@ -33,7 +33,7 @@ const Post: React.FC<Props> = ({ post }) => {
 	}
 
 	return (
-		<div className="flex w-3/5 h-36 rounded-lg border-2 border-white my-3">
+		<div onClick={() => setActivePost(id)} className="flex w-3/5 h-36 rounded-lg border-2 border-white my-3 hover:bg-gray-700">
 			<div className="w-1/12 flex flex-col justify-center items-center border-r-2 border-white">
 				<ArrowSmUpIcon onClick={() => handleVotePost(true)} className={`h-10 w-10 hover:stroke-green-500 ${userLiked ? 'stroke-green-500' : ''}`} />
 				{ formatLikes(likes - dislikes) }
