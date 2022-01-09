@@ -176,6 +176,37 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 	return &comment, nil
 }
 
+func (r *mutationResolver) VoteComment(ctx context.Context, commentID string, username string, like bool) (string, error) {
+	var likeVerb, dislikeVerb string
+
+	if like {
+		likeVerb = "ADD"
+		dislikeVerb = "DELETE"
+	} else {
+		likeVerb = "DELETE"
+		dislikeVerb = "ADD"
+	}
+
+	_, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
+		TableName: aws.String("commentsTable-reddit-clone"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"CommentId": {S: aws.String(commentID)},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":voters": {SS: []*string{aws.String(username)}},
+		},
+		UpdateExpression: aws.String(fmt.Sprintf("%s Likes :voters %s Dislikes :voters", likeVerb, dislikeVerb)),
+	})
+
+	if err != nil {
+		fmt.Printf("Error calling UpdateItem: %s\n", err)
+		return commentID, errors.New("database update item call failed")
+	}
+
+	fmt.Printf("Comment %s has been voted on by %s\n", commentID, username)
+	return commentID, nil
+}
+
 func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.Post, error) {
 	var posts []*model.Post
 	expr, _ := expression.NewBuilder().Build()

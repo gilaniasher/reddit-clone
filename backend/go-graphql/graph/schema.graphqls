@@ -46,4 +46,5 @@ type Mutation {
   createUser(username: String!, email: String!): String! 
   votePost(postId: String!, username: String!, like: Boolean!): String!
   createComment(postId: String!, posterId: String!, parentId: String, content: String!): Comment!
+  voteComment(commentId: String!, username: String!, like: Boolean!): String!
 }

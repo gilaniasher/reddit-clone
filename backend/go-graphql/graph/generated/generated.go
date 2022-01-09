@@ -60,6 +60,7 @@ type ComplexityRoot struct {
 		CreateComment func(childComplexity int, postID string, posterID string, parentID *string, content string) int
 		CreatePost    func(childComplexity int, subreddit string, poster string, headerText string, subText string) int
 		CreateUser    func(childComplexity int, username string, email string) int
+		VoteComment   func(childComplexity int, commentID string, username string, like bool) int
 		VotePost      func(childComplexity int, postID string, username string, like bool) int
 	}
 
@@ -95,6 +96,7 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, username string, email string) (string, error)
 	VotePost(ctx context.Context, postID string, username string, like bool) (string, error)
 	CreateComment(ctx context.Context, postID string, posterID string, parentID *string, content string) (*model.Comment, error)
+	VoteComment(ctx context.Context, commentID string, username string, like bool) (string, error)
 }
 type QueryResolver interface {
 	Posts(ctx context.Context, username *string) ([]*model.Post, error)
@@ -224,6 +226,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["username"].(string), args["email"].(string)), true
+
+	case "Mutation.voteComment":
+		if e.complexity.Mutation.VoteComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_voteComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.VoteComment(childComplexity, args["commentId"].(string), args["username"].(string), args["like"].(bool)), true
 
 	case "Mutation.votePost":
 		if e.complexity.Mutation.VotePost == nil {
@@ -493,6 +507,7 @@ type Mutation {
   createUser(username: String!, email: String!): String! 
   votePost(postId: String!, username: String!, like: Boolean!): String!
   createComment(postId: String!, posterId: String!, parentId: String, content: String!): Comment!
+  voteComment(commentId: String!, username: String!, like: Boolean!): String!
 }
 `, BuiltIn: false},
 }
@@ -607,6 +622,39 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 		}
 	}
 	args["email"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_voteComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["commentId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commentId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["commentId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg1
+	var arg2 bool
+	if tmp, ok := rawArgs["like"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
+		arg2, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["like"] = arg2
 	return args, nil
 }
 
@@ -1311,6 +1359,48 @@ func (ec *executionContext) _Mutation_createComment(ctx context.Context, field g
 	res := resTmp.(*model.Comment)
 	fc.Result = res
 	return ec.marshalNComment2ᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_voteComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_voteComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().VoteComment(rctx, args["commentId"].(string), args["username"].(string), args["like"].(bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -3245,6 +3335,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "createComment":
 			out.Values[i] = ec._Mutation_createComment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "voteComment":
+			out.Values[i] = ec._Mutation_voteComment(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
