@@ -1,6 +1,6 @@
-# GraphQL schema example
-# Need to run this before regenerating: go get -u github.com/99designs/gqlgen/cmd
-# https://gqlgen.com/getting-started/
+# Commands to regenerate resolvers for updated schema: 
+#   go get -u github.com/99designs/gqlgen/cmd
+#   go run github.com/99designs/gqlgen generate
 
 type Post {
   id: ID!

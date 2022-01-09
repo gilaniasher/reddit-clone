@@ -3,9 +3,6 @@ package graph
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
 
-// go get -u github.com/99designs/gqlgen/cmd
-// go run github.com/99designs/gqlgen generate
-
 import (
 	"context"
 	"errors"
@@ -13,63 +10,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/generated"
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/model"
-	"github.com/google/uuid"
+	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/utils"
 )
-
-var sess = session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-var svc = dynamodb.New(sess, &aws.Config{Endpoint: aws.String("http://localhost:8000")})
-
-type UserDdb struct {
-	Username string
-	Email    string
-}
-
-type PostDdb struct {
-	PostId            string
-	CreationTimestamp string
-	Poster            string
-	Likes             []*string `dynamodbav:",stringset"` // Will default to a list (not set) without this
-	Dislikes          []*string `dynamodbav:",stringset"`
-	Subreddit         string
-	HeaderText        string
-	SubText           string
-	Replies           []*string // Top level commend ids
-}
-
-type CommentDdb struct {
-	CommentId         string
-	Content           string
-	Poster            string
-	CreationTimestamp string
-	ParentId          *string   // If this comment is a reply, it will have a parent comment id
-	Likes             []*string `dynamodbav:",stringset"`
-	Dislikes          []*string `dynamodbav:",stringset"`
-	Replies           []*string // Comment ids of replies
-}
-
-func contains(s []*string, target string) bool {
-	for _, x := range s {
-		if target == *x {
-			return true
-		}
-	}
-
-	return false
-}
 
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (string, error) {
 	// Add this post to DynamoDB
 	newPostId := uuid.New().String()
 
-	av, _ := dynamodbattribute.MarshalMap(PostDdb{
+	av, _ := dynamodbattribute.MarshalMap(utils.PostDdb{
 		PostId:            newPostId,
 		CreationTimestamp: time.Now().Format(time.RFC3339),
 		Poster:            input.Poster,
@@ -80,7 +37,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 		SubText:           input.SubText,
 	})
 
-	_, err := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("postsTable-reddit-clone")})
+	_, err := utils.SVC.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("postsTable-reddit-clone")})
 
 	if err != nil {
 		return newPostId, errors.New("database put call failed")
@@ -96,7 +53,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	}
 
 	// Verify that username is unique in DynamoDB
-	result, errGet := svc.GetItem(&dynamodb.GetItemInput{
+	result, errGet := utils.SVC.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("usersTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Username": {S: aws.String(input.Username)},
@@ -112,12 +69,12 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	}
 
 	// Add user to DynamoDB
-	av, _ := dynamodbattribute.MarshalMap(UserDdb{
+	av, _ := dynamodbattribute.MarshalMap(utils.UserDdb{
 		Username: input.Username,
 		Email:    input.Email,
 	})
 
-	_, errPut := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("usersTable-reddit-clone")})
+	_, errPut := utils.SVC.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("usersTable-reddit-clone")})
 
 	if errPut != nil {
 		fmt.Printf("Error calling PutItem: %s\n", errPut)
@@ -139,7 +96,7 @@ func (r *mutationResolver) VotePost(ctx context.Context, postID string, username
 		dislikeVerb = "ADD"
 	}
 
-	_, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
+	_, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: aws.String("postsTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"PostId": {S: aws.String(postID)},
@@ -167,7 +124,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 	if parentID == nil {
 		av := &dynamodb.AttributeValue{S: aws.String(newId)}
 
-		_, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
+		_, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
 			TableName: aws.String("postsTable-reddit-clone"),
 			Key: map[string]*dynamodb.AttributeValue{
 				"PostId": {S: aws.String(postID)},
@@ -186,7 +143,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 	}
 
 	// Add to Comments Table (TODO this operation should be atomic with the last)
-	av, _ := dynamodbattribute.MarshalMap(CommentDdb{
+	av, _ := dynamodbattribute.MarshalMap(utils.CommentDdb{
 		CommentId:         newId,
 		Content:           content,
 		Poster:            posterID,
@@ -197,7 +154,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 		Replies:           []*string{},
 	})
 
-	_, err := svc.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("commentsTable-reddit-clone")})
+	_, err := utils.SVC.PutItem(&dynamodb.PutItemInput{Item: av, TableName: aws.String("commentsTable-reddit-clone")})
 
 	if err != nil {
 		fmt.Printf("Error calling PutItem: %s\n", err)
@@ -225,7 +182,7 @@ func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.P
 	var posts []*model.Post
 	expr, _ := expression.NewBuilder().Build()
 
-	result, err := svc.Scan(&dynamodb.ScanInput{
+	result, err := utils.SVC.Scan(&dynamodb.ScanInput{
 		TableName:                 aws.String("postsTable-reddit-clone"),
 		IndexName:                 aws.String("timestamp"),
 		ExpressionAttributeNames:  expr.Names(),
@@ -238,15 +195,15 @@ func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.P
 	}
 
 	for _, i := range result.Items {
-		post := PostDdb{}
+		post := utils.PostDdb{}
 		dynamodbattribute.UnmarshalMap(i, &post)
 
 		var userLiked, userDisliked bool
 
 		if username != nil {
 			// Should figure out how to query the set from DDB instead of this manual search
-			userLiked = contains(post.Likes, *username)
-			userDisliked = contains(post.Dislikes, *username)
+			userLiked = utils.Contains(post.Likes, *username)
+			userDisliked = utils.Contains(post.Dislikes, *username)
 		}
 
 		posts = append(posts, &model.Post{
@@ -268,14 +225,14 @@ func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.P
 }
 
 func (r *queryResolver) Post(ctx context.Context, postID string, username *string) (*model.Post, error) {
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
+	result, err := utils.SVC.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("postsTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"PostId": {S: aws.String(postID)},
 		},
 	})
 
-	postDdb := PostDdb{}
+	postDdb := utils.PostDdb{}
 	post := model.Post{}
 	var userLiked, userDisliked bool
 
@@ -289,8 +246,8 @@ func (r *queryResolver) Post(ctx context.Context, postID string, username *strin
 
 	if username != nil {
 		// Should figure out how to query the set from DDB instead of this manual search
-		userLiked = contains(postDdb.Likes, *username)
-		userDisliked = contains(postDdb.Dislikes, *username)
+		userLiked = utils.Contains(postDdb.Likes, *username)
+		userDisliked = utils.Contains(postDdb.Dislikes, *username)
 	}
 
 	post = model.Post{
@@ -310,14 +267,14 @@ func (r *queryResolver) Post(ctx context.Context, postID string, username *strin
 }
 
 func (r *queryResolver) User(ctx context.Context, username string) (*model.User, error) {
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
+	result, err := utils.SVC.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("usersTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Username": {S: aws.String(username)},
 		},
 	})
 
-	userDdb := UserDdb{}
+	userDdb := utils.UserDdb{}
 	user := model.User{}
 
 	if err != nil {
@@ -335,7 +292,7 @@ func (r *queryResolver) User(ctx context.Context, username string) (*model.User,
 
 func (r *queryResolver) Comments(ctx context.Context, postID string, username *string) ([]*model.Comment, error) {
 	// Retrieve post to get top level comment IDs
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
+	result, err := utils.SVC.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("postsTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"PostId": {S: aws.String(postID)},
@@ -349,7 +306,7 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 		return nil, errors.New("post, " + postID + ", does not exist")
 	}
 
-	postDdb := PostDdb{}
+	postDdb := utils.PostDdb{}
 	dynamodbattribute.UnmarshalMap(result.Item, &postDdb)
 
 	if len(postDdb.Replies) == 0 {
@@ -366,7 +323,7 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 		})
 	}
 
-	batchResult, err := svc.BatchGetItem(&dynamodb.BatchGetItemInput{
+	batchResult, err := utils.SVC.BatchGetItem(&dynamodb.BatchGetItemInput{
 		RequestItems: map[string]*dynamodb.KeysAndAttributes{
 			"commentsTable-reddit-clone": {Keys: commentKeys},
 		},
@@ -377,7 +334,7 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 		return nil, errors.New("database batch get items call failed")
 	}
 
-	commentsDdb := []*CommentDdb{}
+	commentsDdb := []*utils.CommentDdb{}
 	dynamodbattribute.UnmarshalListOfMaps(batchResult.Responses["commentsTable-reddit-clone"], &commentsDdb)
 	comments := []*model.Comment{}
 
@@ -385,8 +342,8 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 		var userLiked, userDisliked bool
 
 		if username != nil {
-			userLiked = contains(commentDdb.Likes, *username)
-			userDisliked = contains(commentDdb.Dislikes, *username)
+			userLiked = utils.Contains(commentDdb.Likes, *username)
+			userDisliked = utils.Contains(commentDdb.Dislikes, *username)
 		}
 
 		comments = append(comments, &model.Comment{
@@ -408,7 +365,7 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 }
 
 func (r *queryResolver) Comment(ctx context.Context, commentID string, username *string) (*model.Comment, error) {
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
+	result, err := utils.SVC.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("commentsTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"CommentId": {S: aws.String(commentID)},
@@ -421,13 +378,13 @@ func (r *queryResolver) Comment(ctx context.Context, commentID string, username 
 		return nil, errors.New("comment, " + commentID + ", does not exist")
 	}
 
-	commentDdb := CommentDdb{}
+	commentDdb := utils.CommentDdb{}
 	dynamodbattribute.UnmarshalMap(result.Item, &commentDdb)
 	var userLiked, userDisliked bool
 
 	if username != nil {
-		userLiked = contains(commentDdb.Likes, *username)
-		userDisliked = contains(commentDdb.Dislikes, *username)
+		userLiked = utils.Contains(commentDdb.Likes, *username)
+		userDisliked = utils.Contains(commentDdb.Dislikes, *username)
 	}
 
 	comment := model.Comment{
