@@ -53,3 +53,42 @@ export const VOTE_POST = gql`
 		votePost(postId: $postId, username: $username, like: $like)
 	}
 `
+
+/* Create Comment */
+
+export interface CreateCommentInput {
+	postId: string,
+	posterId: string,
+	parentId?: string,
+	content: string
+}
+
+export interface CreateCommentOutput {
+	createComment: {
+		id: string,
+		parentId?: string,
+		content: string,
+		poster: string,
+		timestamp: string,
+		likes: number,
+		dislikes: number,
+		userLiked: boolean,
+		userDisliked: boolean,
+	}	
+}
+
+export const CREATE_COMMENT = gql`
+	mutation createComment($postId: String!, $posterId: String!, $parentId: String, $content: String!) {
+		createComment(postId: $postId, posterId: $posterId, parentId: $parentId, content: $content) {
+			id
+			parentId
+			content
+			poster
+			timestamp
+			likes
+			dislikes
+			userLiked
+			userDisliked
+		}
+	}
+`

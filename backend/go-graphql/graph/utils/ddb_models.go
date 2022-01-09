@@ -14,7 +14,7 @@ type PostDdb struct {
 	Subreddit         string
 	HeaderText        string
 	SubText           string
-	Replies           []*string // Top level commend ids
+	Replies           []*string `dynamodbav:",omitempty"` // Top level comment ids. This tag prevents it from being null but rather undefined
 }
 
 type CommentDdb struct {

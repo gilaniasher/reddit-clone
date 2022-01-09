@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import ShortPost from './ShortPost'
 import Comment from './Comment'
 
@@ -6,6 +6,7 @@ import { useMutation, useQuery, useReactiveVar } from '@apollo/client'
 import { useLocalState } from '../apollo/hooks'
 import { localStateVar } from '../apollo/cache'
 import { CommentInput, CommentResult, GET_COMMENTS, GET_POST, PostInput, PostResult } from '../apollo/queries'
+import { CreateCommentInput, CreateCommentOutput, CREATE_COMMENT } from '../apollo/mutations'
 
 interface Props {
 	postId: string
@@ -16,7 +17,25 @@ const LongPost: React.FC<Props> = ({ postId }) => {
 	const { setActivePost } = useLocalState(localStateVar)
 
 	const { loading: postLoading, data: postData, error: postError } = useQuery<PostResult, PostInput>(GET_POST, { variables: { postId, username: loggedInUser?.username } })
-	const { loading: commentsLoading, data: commentsData, error: commentsError } = useQuery<CommentResult, CommentInput>(GET_COMMENTS, { variables: { postId, username: loggedInUser?.username } })
+	const { loading: commentsLoading, data: commentsData, error: commentsError, refetch: refetchComments } = useQuery<CommentResult, CommentInput>(GET_COMMENTS, { variables: { postId, username: loggedInUser?.username } })
+	const [createComment, { called: newCommentCalled, loading: newCommentLoading, error: newCommentError }] = useMutation<CreateCommentOutput, CreateCommentInput>(CREATE_COMMENT)
+
+	const [content, setContent] = useState('')
+
+	const submitPost = () => {
+		if (loggedInUser === undefined) {
+			alert('Cannot create post without being logged in')
+			return
+		}
+
+		createComment({ variables: { postId, posterId: loggedInUser.username, content } })
+		setContent('')
+	}
+
+	useEffect(() => {
+		if (newCommentCalled && !newCommentLoading &&  !newCommentError)
+			refetchComments()
+	}, [newCommentCalled, newCommentLoading, newCommentError])
 
 	if (postLoading || commentsLoading)
 		return <div className="animate-spin h-5 w-5 rounded-full border-b-2 border-gray-900" />
@@ -35,8 +54,13 @@ const LongPost: React.FC<Props> = ({ postId }) => {
 				<textarea
 					className="w-full mb-4 bg-gray-800 p-4"
 					placeholder="What are your thoughts?"
+					value={content}
+					onChange={e => setContent(e.target.value)}
 				/>
-				<button className="rounded-lg w-24 h-6 mx-4 bg-cyan-300 text-black mb-4">Comment</button>
+				<button onClick={submitPost} className="flex flex-row justify-center items-center rounded-lg w-32 h-8 mx-4 bg-cyan-300 text-black mb-4">
+					{ newCommentLoading && <div className="animate-spin h-5 w-5 rounded-full border-b-2 border-gray-900 mr-3" /> }
+					Comment
+				</button>
 			</div>
 			<div className="w-3/5 h-full p-4 rounded-md border-2 border-white">
 				<h1 className="text-2xl mb-4">Comments</h1>
