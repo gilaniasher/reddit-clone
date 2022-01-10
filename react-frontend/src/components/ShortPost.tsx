@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowSmUpIcon, ArrowSmDownIcon } from '@heroicons/react/outline'
 import { formatLikes, formatTime } from '../utils/utils'
 
@@ -14,31 +14,40 @@ interface Props {
 }
 
 const Post: React.FC<Props> = ({ post }) => {
-	const {
-		id, subreddit, poster, timestamp, headerText, subText,
-		likes, dislikes, userLiked, userDisliked
-	} = post
-
 	const { loggedInUser } = useReactiveVar(localStateVar)
-	const { triggerReload, setActivePost } = useLocalState(localStateVar)
-	const [votePost, { called, loading, error }] = useMutation<VotePostOutput, VotePostInput>(VOTE_POST)
+	const { setActivePost } = useLocalState(localStateVar)
+	const [votePost, { data, error }] = useMutation<VotePostOutput, VotePostInput>(VOTE_POST)
+
+	const { id, subreddit, poster, timestamp, headerText, subText } = post
+	const [likes, setLikes] = useState(post.likes - post.dislikes)
+	const [userLiked, setUserLiked] = useState(post.userLiked)
+	const [userDisliked, setUserDisliked] = useState(post.userDisliked)
 
 	useEffect(() => {
-		if (called && !loading && !error)
-			triggerReload(true)
-	}, [called, loading, error])
+		if (error) {
+			alert('There was an error voting on this post')
+		} else if (data) {
+			setLikes(data.votePost.likes - data.votePost.dislikes)
+			setUserLiked(data.votePost.userLiked)
+			setUserDisliked(data.votePost.userDisliked)
+		}
+	}, [data, error])
 
-	const handleVotePost = (like: boolean) => {
-		if (loggedInUser !== undefined)
+	const handleVotePost = (e: React.MouseEvent, like: boolean) => {
+		e.stopPropagation() // Allows you to click vote buttons instead of opening long post
+
+		if (loggedInUser === undefined)
+			alert('Must be logged in to vote on posts')
+		else
 			votePost({ variables: { postId: post.id, username: loggedInUser.username, like } })
 	}
 
 	return (
 		<div onClick={() => setActivePost(id)} className="flex w-3/5 h-36 rounded-lg border-2 border-white my-3 hover:bg-gray-700">
 			<div className="w-1/12 flex flex-col justify-center items-center border-r-2 border-white">
-				<ArrowSmUpIcon onClick={() => handleVotePost(true)} className={`h-10 w-10 hover:stroke-green-500 ${userLiked ? 'stroke-green-500' : ''}`} />
-				{ formatLikes(likes - dislikes) }
-				<ArrowSmDownIcon onClick={() => handleVotePost(false)} className={`h-10 w-10 hover:stroke-red-500 ${userDisliked ? 'stroke-red-500' : ''}`} />
+				<ArrowSmUpIcon onClick={e => handleVotePost(e, true)} className={`relative h-10 w-10 hover:stroke-green-500 ${userLiked ? 'stroke-green-500' : ''}`} />
+				{ formatLikes(likes) }
+				<ArrowSmDownIcon onClick={e => handleVotePost(e, false)} className={`relative h-10 w-10 hover:stroke-red-500 ${userDisliked ? 'stroke-red-500' : ''}`} />
 			</div>
 			<div className="w-11/12 flex flex-col p-3">
 				<div className="flex flex-row mb-2">

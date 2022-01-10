@@ -103,7 +103,12 @@ export interface VotePostInput {
 }
 
 export interface VotePostOutput {
-	postId: string
+	votePost: {
+		likes: number,
+		dislikes: number,
+		userLiked: boolean,
+		userDisliked: boolean
+	}
 }
 
 export interface CreateCommentInput {

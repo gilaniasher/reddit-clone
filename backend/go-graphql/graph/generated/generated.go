@@ -89,14 +89,21 @@ type ComplexityRoot struct {
 		Email    func(childComplexity int) int
 		Username func(childComplexity int) int
 	}
+
+	VoteResult struct {
+		Dislikes     func(childComplexity int) int
+		Likes        func(childComplexity int) int
+		UserDisliked func(childComplexity int) int
+		UserLiked    func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	CreatePost(ctx context.Context, subreddit string, poster string, headerText string, subText string) (string, error)
 	CreateUser(ctx context.Context, username string, email string) (string, error)
-	VotePost(ctx context.Context, postID string, username string, like bool) (string, error)
+	VotePost(ctx context.Context, postID string, username string, like bool) (*model.VoteResult, error)
 	CreateComment(ctx context.Context, postID string, posterID string, parentID *string, content string) (*model.Comment, error)
-	VoteComment(ctx context.Context, commentID string, username string, like bool) (string, error)
+	VoteComment(ctx context.Context, commentID string, username string, like bool) (*model.VoteResult, error)
 }
 type QueryResolver interface {
 	Posts(ctx context.Context, username *string) ([]*model.Post, error)
@@ -395,6 +402,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Username(childComplexity), true
 
+	case "VoteResult.dislikes":
+		if e.complexity.VoteResult.Dislikes == nil {
+			break
+		}
+
+		return e.complexity.VoteResult.Dislikes(childComplexity), true
+
+	case "VoteResult.likes":
+		if e.complexity.VoteResult.Likes == nil {
+			break
+		}
+
+		return e.complexity.VoteResult.Likes(childComplexity), true
+
+	case "VoteResult.userDisliked":
+		if e.complexity.VoteResult.UserDisliked == nil {
+			break
+		}
+
+		return e.complexity.VoteResult.UserDisliked(childComplexity), true
+
+	case "VoteResult.userLiked":
+		if e.complexity.VoteResult.UserLiked == nil {
+			break
+		}
+
+		return e.complexity.VoteResult.UserLiked(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -494,6 +529,13 @@ type Comment {
   replies: [Comment!]!
 }
 
+type VoteResult {
+  likes: Int!
+  dislikes: Int!
+  userLiked: Boolean!
+  userDisliked: Boolean!
+}
+
 type Query {
   posts(username: String): [Post!]!
   post(postId: String!, username: String): Post!
@@ -505,9 +547,9 @@ type Query {
 type Mutation {
   createPost(subreddit: String!, poster: String!, headerText: String!, subText: String!): String!
   createUser(username: String!, email: String!): String! 
-  votePost(postId: String!, username: String!, like: Boolean!): String!
+  votePost(postId: String!, username: String!, like: Boolean!): VoteResult!
   createComment(postId: String!, posterId: String!, parentId: String, content: String!): Comment!
-  voteComment(commentId: String!, username: String!, like: Boolean!): String!
+  voteComment(commentId: String!, username: String!, like: Boolean!): VoteResult!
 }
 `, BuiltIn: false},
 }
@@ -1314,9 +1356,9 @@ func (ec *executionContext) _Mutation_votePost(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.VoteResult)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNVoteResult2ᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐVoteResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1398,9 +1440,9 @@ func (ec *executionContext) _Mutation_voteComment(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.VoteResult)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNVoteResult2ᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐVoteResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -2102,6 +2144,146 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VoteResult_likes(ctx context.Context, field graphql.CollectedField, obj *model.VoteResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VoteResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Likes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VoteResult_dislikes(ctx context.Context, field graphql.CollectedField, obj *model.VoteResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VoteResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dislikes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VoteResult_userLiked(ctx context.Context, field graphql.CollectedField, obj *model.VoteResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VoteResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserLiked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VoteResult_userDisliked(ctx context.Context, field graphql.CollectedField, obj *model.VoteResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VoteResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserDisliked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -3558,6 +3740,48 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var voteResultImplementors = []string{"VoteResult"}
+
+func (ec *executionContext) _VoteResult(ctx context.Context, sel ast.SelectionSet, obj *model.VoteResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, voteResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VoteResult")
+		case "likes":
+			out.Values[i] = ec._VoteResult_likes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dislikes":
+			out.Values[i] = ec._VoteResult_dislikes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "userLiked":
+			out.Values[i] = ec._VoteResult_userLiked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "userDisliked":
+			out.Values[i] = ec._VoteResult_userDisliked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -3996,6 +4220,20 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋgilaniasherᚋreddit�
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVoteResult2githubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐVoteResult(ctx context.Context, sel ast.SelectionSet, v model.VoteResult) graphql.Marshaler {
+	return ec._VoteResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNVoteResult2ᚖgithubᚗcomᚋgilaniasherᚋredditᚑcloneᚋbackendᚋgoᚑgraphqlᚋgraphᚋmodelᚐVoteResult(ctx context.Context, sel ast.SelectionSet, v *model.VoteResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._VoteResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

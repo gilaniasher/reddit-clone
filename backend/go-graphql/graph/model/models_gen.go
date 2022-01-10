@@ -32,3 +32,10 @@ type User struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 }
+
+type VoteResult struct {
+	Likes        int  `json:"likes"`
+	Dislikes     int  `json:"dislikes"`
+	UserLiked    bool `json:"userLiked"`
+	UserDisliked bool `json:"userDisliked"`
+}

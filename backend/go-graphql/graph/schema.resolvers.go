@@ -83,7 +83,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, emai
 	return username, nil
 }
 
-func (r *mutationResolver) VotePost(ctx context.Context, postID string, username string, like bool) (string, error) {
+func (r *mutationResolver) VotePost(ctx context.Context, postID string, username string, like bool) (*model.VoteResult, error) {
 	var likeVerb, dislikeVerb string
 
 	if like {
@@ -94,7 +94,7 @@ func (r *mutationResolver) VotePost(ctx context.Context, postID string, username
 		dislikeVerb = "ADD"
 	}
 
-	_, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
+	result, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: aws.String("postsTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"PostId": {S: aws.String(postID)},
@@ -103,15 +103,27 @@ func (r *mutationResolver) VotePost(ctx context.Context, postID string, username
 			":voters": {SS: []*string{aws.String(username)}}, // SS for String Set
 		},
 		UpdateExpression: aws.String(fmt.Sprintf("%s Likes :voters %s Dislikes :voters", likeVerb, dislikeVerb)),
+		ReturnValues:     aws.String("ALL_NEW"),
 	})
 
 	if err != nil {
 		fmt.Printf("Error calling UpdateItem: %s\n", err)
-		return postID, errors.New("database update call failed")
+		return nil, errors.New("database update call failed")
+	}
+
+	postDdb := utils.PostDdb{}
+	dynamodbattribute.UnmarshalMap(result.Attributes, &postDdb)
+	userLiked, userDisliked := utils.UserLikes(postDdb.Likes, postDdb.Dislikes, aws.String(username))
+
+	vote := &model.VoteResult{
+		Likes:        len(postDdb.Likes) - 1,
+		Dislikes:     len(postDdb.Dislikes) - 1,
+		UserLiked:    userLiked,
+		UserDisliked: userDisliked,
 	}
 
 	fmt.Printf("Post %s has been voted on by %s\n", postID, username)
-	return postID, nil
+	return vote, nil
 }
 
 func (r *mutationResolver) CreateComment(ctx context.Context, postID string, posterID string, parentID *string, content string) (*model.Comment, error) {
@@ -176,7 +188,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 	return &comment, nil
 }
 
-func (r *mutationResolver) VoteComment(ctx context.Context, commentID string, username string, like bool) (string, error) {
+func (r *mutationResolver) VoteComment(ctx context.Context, commentID string, username string, like bool) (*model.VoteResult, error) {
 	var likeVerb, dislikeVerb string
 
 	if like {
@@ -187,7 +199,7 @@ func (r *mutationResolver) VoteComment(ctx context.Context, commentID string, us
 		dislikeVerb = "ADD"
 	}
 
-	_, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
+	result, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: aws.String("commentsTable-reddit-clone"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"CommentId": {S: aws.String(commentID)},
@@ -196,15 +208,27 @@ func (r *mutationResolver) VoteComment(ctx context.Context, commentID string, us
 			":voters": {SS: []*string{aws.String(username)}},
 		},
 		UpdateExpression: aws.String(fmt.Sprintf("%s Likes :voters %s Dislikes :voters", likeVerb, dislikeVerb)),
+		ReturnValues:     aws.String("ALL_NEW"),
 	})
 
 	if err != nil {
 		fmt.Printf("Error calling UpdateItem: %s\n", err)
-		return commentID, errors.New("database update item call failed")
+		return nil, errors.New("database update item call failed")
+	}
+
+	commentDdb := utils.CommentDdb{}
+	dynamodbattribute.UnmarshalMap(result.Attributes, &commentDdb)
+	userLiked, userDisliked := utils.UserLikes(commentDdb.Likes, commentDdb.Dislikes, aws.String(username))
+
+	vote := &model.VoteResult{
+		Likes:        len(commentDdb.Likes) - 1,
+		Dislikes:     len(commentDdb.Dislikes) - 1,
+		UserLiked:    userLiked,
+		UserDisliked: userDisliked,
 	}
 
 	fmt.Printf("Comment %s has been voted on by %s\n", commentID, username)
-	return commentID, nil
+	return vote, nil
 }
 
 func (r *queryResolver) Posts(ctx context.Context, username *string) ([]*model.Post, error) {

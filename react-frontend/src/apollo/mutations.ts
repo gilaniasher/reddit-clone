@@ -14,7 +14,12 @@ export const CREATE_POST = gql`
 
 export const VOTE_POST = gql`
 	mutation votePost($postId: String!, $username: String!, $like: Boolean!) {
-		votePost(postId: $postId, username: $username, like: $like)
+		votePost(postId: $postId, username: $username, like: $like) {
+			likes
+			dislikes
+			userLiked
+			userDisliked
+		}
 	}
 `
 
