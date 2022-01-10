@@ -66,7 +66,7 @@ const LongPost: React.FC<Props> = ({ postId }) => {
 			</div>
 			<div className="w-3/5 h-full p-4 rounded-md border-2 border-white">
 				<h1 className="text-2xl mb-4">Comments</h1>
-				{ commentsData.comments.map(c => <Comment data={c} />) }
+				{ commentsData.comments.map(c => <Comment key={c.id} data={c} refreshComments={refetchComments} />) }
 			</div>
 		</div>
 	</>

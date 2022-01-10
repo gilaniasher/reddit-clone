@@ -10,7 +10,8 @@ export interface LocalState {
 	loggedInUser?: LocalUser,
 	showCreatePost: boolean,
 	reloadPosts: boolean,
-	activePostId?: string
+	activePostId?: string,
+	activeCommentId?: string
 }
 
 export const localStateVar = makeVar<LocalState>({

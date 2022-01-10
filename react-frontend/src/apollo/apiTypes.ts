@@ -21,7 +21,7 @@ export interface CommentData {
 	dislikes: number,
 	userLiked: boolean,
 	userDisliked: boolean,
-	replies: CommentData[]
+	replies?: CommentData[]
 }
 
 /* Queries */

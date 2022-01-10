@@ -130,26 +130,37 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 	newId := uuid.New().String()
 	curTimestamp := time.Now().Format(time.RFC3339)
 
-	// Update Posts table if this is a top level comment (no parentID)
+	commentAV := &dynamodb.AttributeValue{S: aws.String(newId)}
+	var table, idCol, idVal string
+
 	if parentID == nil {
-		av := &dynamodb.AttributeValue{S: aws.String(newId)}
+		// Vals for updating posts table top level comments
+		table = "postsTable-reddit-clone"
+		idCol = "PostId"
+		idVal = postID
+	} else {
+		// Vals for updating comments table replies
+		table = "commentsTable-reddit-clone"
+		idCol = "CommentId"
+		idVal = *parentID
+	}
 
-		_, err := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
-			TableName: aws.String("postsTable-reddit-clone"),
-			Key: map[string]*dynamodb.AttributeValue{
-				"PostId": {S: aws.String(postID)},
-			},
-			ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-				":comment":    {L: []*dynamodb.AttributeValue{av}},
-				":empty_list": {L: []*dynamodb.AttributeValue{}},
-			},
-			UpdateExpression: aws.String("SET Replies = list_append(if_not_exists(Replies, :empty_list), :comment)"),
-		})
+	// Update appropriate table with this comment as a reply
+	_, updateErr := utils.SVC.UpdateItem(&dynamodb.UpdateItemInput{
+		TableName: aws.String(table),
+		Key: map[string]*dynamodb.AttributeValue{
+			idCol: {S: aws.String(idVal)},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":comment":    {L: []*dynamodb.AttributeValue{commentAV}},
+			":empty_list": {L: []*dynamodb.AttributeValue{}},
+		},
+		UpdateExpression: aws.String("SET Replies = list_append(if_not_exists(Replies, :empty_list), :comment)"),
+	})
 
-		if err != nil {
-			fmt.Printf("Error calling UpdateItem: %s\n", err)
-			return nil, errors.New("database update call failed")
-		}
+	if updateErr != nil {
+		fmt.Printf("Error calling UpdateItem: %s\n", updateErr)
+		return nil, errors.New("database update call failed")
 	}
 
 	// Add to Comments Table (TODO this operation should be atomic with the last)
@@ -181,7 +192,6 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, pos
 		Dislikes:     0,
 		UserLiked:    false,
 		UserDisliked: false,
-		Replies:      []*model.Comment{},
 	}
 
 	fmt.Printf("Succesfully created comment %s for post %s\n", newId, postID)
@@ -379,11 +389,11 @@ func (r *queryResolver) Comments(ctx context.Context, postID string, username *s
 			Dislikes:     len(commentDdb.Dislikes) - 1,
 			UserLiked:    userLiked,
 			UserDisliked: userDisliked,
-			Replies:      []*model.Comment{}, // TODO need to add support for getting replies
+			Replies:      utils.GetReplies(commentDdb.CommentId, username),
 		})
 	}
 
-	fmt.Printf("Succesfully retrieved %d comments for post %s\n", len(comments), postID)
+	fmt.Printf("Succesfully retrieved %d top level comments for post %s\n", len(comments), postID)
 	return comments, nil
 }
 
@@ -417,6 +427,11 @@ func (r *queryResolver) Comment(ctx context.Context, commentID string, username 
 	}
 
 	return &comment, nil
+}
+
+func (r *queryResolver) Replies(ctx context.Context, commentID string, username *string) ([]*model.Comment, error) {
+	// This will just return empty list if commentID is invalid or there is a database error
+	return utils.GetReplies(commentID, username), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

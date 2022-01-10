@@ -25,5 +25,5 @@ type CommentDdb struct {
 	ParentId          *string   // If this comment is a reply, it will have a parent comment id
 	Likes             []*string `dynamodbav:",stringset"`
 	Dislikes          []*string `dynamodbav:",stringset"`
-	Replies           []*string // Comment ids of replies
+	Replies           []*string `dynamodbav:",omitempty"` // Comment ids of replies
 }
