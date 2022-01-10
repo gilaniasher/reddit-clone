@@ -38,3 +38,14 @@ export const CREATE_COMMENT = gql`
 		}
 	}
 `
+
+export const VOTE_COMMENT = gql`
+	mutation voteComment($commentId: String!, $username: String!, $like: Boolean!) {
+		voteComment(commentId: $commentId, username: $username, like: $like) {
+			likes
+			dislikes
+			userLiked
+			userDisliked
+		}
+	}
+`

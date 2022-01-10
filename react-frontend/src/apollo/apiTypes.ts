@@ -131,3 +131,18 @@ export interface CreateCommentOutput {
 		userDisliked: boolean,
 	}	
 }
+
+export interface VoteCommentInput {
+	commentId: string,
+	username: string,
+	like: boolean
+}
+
+export interface VoteCommentOutput {
+	voteComment: {
+		likes: number,
+		dislikes: number,
+		userLiked: boolean,
+		userDisliked: boolean
+	}
+}
