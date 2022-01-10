@@ -1,7 +1,7 @@
 import React from 'react'
 import { ArrowSmUpIcon, ArrowSmDownIcon, ChatAltIcon } from '@heroicons/react/outline'
 import { formatTime, formatLikes } from '../utils/utils'
-import { CommentData } from '../apollo/queries'
+import { CommentData } from '../apollo/apiTypes'
 
 interface Props {
 	data: CommentData

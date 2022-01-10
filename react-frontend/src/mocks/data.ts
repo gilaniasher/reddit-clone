@@ -1,4 +1,4 @@
-import { CommentData } from '../apollo/queries'
+import { CommentData } from '../apollo/apiTypes'
 
 export const postsData = [
 	{

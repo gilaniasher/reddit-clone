@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react'
 import { useMutation, useReactiveVar } from '@apollo/client'
 import { localStateVar } from '../apollo/cache'
 import { useLocalState } from '../apollo/hooks'
-import { CREATE_POST, CreatePostInput, CreatePostResult } from '../apollo/mutations'
+
+import { CREATE_POST } from '../apollo/mutations'
+import { CreatePostInput, CreatePostOutput } from '../apollo/apiTypes'
 
 const CreatePost: React.FC = () => {
 	const { loggedInUser } = useReactiveVar(localStateVar)
 	const { showCreatePost, triggerReload } = useLocalState(localStateVar)
-	const [createPost, { data, error }] = useMutation<CreatePostResult, CreatePostInput>(CREATE_POST)
+	const [createPost, { data, error }] = useMutation<CreatePostOutput, CreatePostInput>(CREATE_POST)
 
 	const [subreddit, setSubreddit] = useState('')
 	const [headerText, setHeaderText] = useState('')

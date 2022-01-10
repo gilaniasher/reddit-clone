@@ -5,12 +5,13 @@ import { useLazyQuery, useMutation, useReactiveVar } from '@apollo/client'
 import { localStateVar } from '../apollo/cache'
 import { useLocalState } from '../apollo/hooks'
 
-import { CREATE_USER, CreateUserInput, CreateUserResult } from '../apollo/mutations'
-import { GET_USER, UserInput, UserResponse } from '../apollo/queries'
+import { CREATE_USER } from '../apollo/mutations'
+import { GET_USER } from '../apollo/queries'
+import { CreateUserInput, CreateUserOutput, UserInput, UserOutput } from '../apollo/apiTypes'
 
 const LoginForm: React.FC = () =>  {
 	const [username, setUsername] = useState('')
-	const [getUser, { called, loading, data, error }] = useLazyQuery<UserResponse, UserInput>(GET_USER)
+	const [getUser, { called, loading, data, error }] = useLazyQuery<UserOutput, UserInput>(GET_USER)
 	const { setUser, setModal } = useLocalState(localStateVar)
 
 	const initLogin = () => {
@@ -51,7 +52,7 @@ const LoginForm: React.FC = () =>  {
 const SignupForm: React.FC = () => {
 	const [username, setUsername] = useState('')
 	const [email, setEmail] = useState('')
-	const [createUser, { error, loading, called }] = useMutation<CreateUserResult, CreateUserInput>(CREATE_USER)
+	const [createUser, { error, loading, called }] = useMutation<CreateUserOutput, CreateUserInput>(CREATE_USER)
 
 	const initSignup = () => {
 		createUser({ variables: { username, email } })

@@ -3,10 +3,11 @@ import { ArrowSmUpIcon, ArrowSmDownIcon } from '@heroicons/react/outline'
 import { formatLikes, formatTime } from '../utils/utils'
 
 import { useMutation, useReactiveVar } from '@apollo/client'
-import { VotePostInput, VotePostResult, VOTE_POST } from '../apollo/mutations'
-import { ShortPostData } from '../apollo/queries'
 import { localStateVar } from '../apollo/cache'
 import { useLocalState } from '../apollo/hooks'
+
+import { VOTE_POST } from '../apollo/mutations'
+import { VotePostInput, VotePostOutput, ShortPostData } from '../apollo/apiTypes'
 
 interface Props {
 	post: ShortPostData
@@ -20,7 +21,7 @@ const Post: React.FC<Props> = ({ post }) => {
 
 	const { loggedInUser } = useReactiveVar(localStateVar)
 	const { triggerReload, setActivePost } = useLocalState(localStateVar)
-	const [votePost, { called, loading, error }] = useMutation<VotePostResult, VotePostInput>(VOTE_POST)
+	const [votePost, { called, loading, error }] = useMutation<VotePostOutput, VotePostInput>(VOTE_POST)
 
 	useEffect(() => {
 		if (called && !loading && !error)

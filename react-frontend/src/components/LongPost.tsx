@@ -5,8 +5,10 @@ import Comment from './Comment'
 import { useMutation, useQuery, useReactiveVar } from '@apollo/client'
 import { useLocalState } from '../apollo/hooks'
 import { localStateVar } from '../apollo/cache'
-import { CommentInput, CommentResult, GET_COMMENTS, GET_POST, PostInput, PostResult } from '../apollo/queries'
-import { CreateCommentInput, CreateCommentOutput, CREATE_COMMENT } from '../apollo/mutations'
+
+import { GET_COMMENTS, GET_POST } from '../apollo/queries'
+import { CREATE_COMMENT } from '../apollo/mutations'
+import { CommentInput, CommentOutput, PostInput, PostOutput, CreateCommentInput, CreateCommentOutput } from '../apollo/apiTypes'
 
 interface Props {
 	postId: string
@@ -16,8 +18,8 @@ const LongPost: React.FC<Props> = ({ postId }) => {
 	const { loggedInUser } = useReactiveVar(localStateVar)
 	const { setActivePost } = useLocalState(localStateVar)
 
-	const { loading: postLoading, data: postData, error: postError } = useQuery<PostResult, PostInput>(GET_POST, { variables: { postId, username: loggedInUser?.username } })
-	const { loading: commentsLoading, data: commentsData, error: commentsError, refetch: refetchComments } = useQuery<CommentResult, CommentInput>(GET_COMMENTS, { variables: { postId, username: loggedInUser?.username } })
+	const { loading: postLoading, data: postData, error: postError } = useQuery<PostOutput, PostInput>(GET_POST, { variables: { postId, username: loggedInUser?.username } })
+	const { loading: commentsLoading, data: commentsData, error: commentsError, refetch: refetchComments } = useQuery<CommentOutput, CommentInput>(GET_COMMENTS, { variables: { postId, username: loggedInUser?.username } })
 	const [createComment, { called: newCommentCalled, loading: newCommentLoading, error: newCommentError }] = useMutation<CreateCommentOutput, CreateCommentInput>(CREATE_COMMENT)
 
 	const [content, setContent] = useState('')
