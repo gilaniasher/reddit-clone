@@ -1,0 +1,55 @@
+
+Resources:
+  postsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: postsTable-reddit-clone
+      AttributeDefinitions:
+        - AttributeName: PostId
+          AttributeType: S
+        - AttributeName: CreationTimestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PostId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: timestamp
+          KeySchema:
+            - AttributeName: PostId
+              KeyType: HASH
+            - AttributeName: CreationTimestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  usersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: usersTable-reddit-clone
+      AttributeDefinitions:
+        - AttributeName: Username
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Username
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  commentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: commentsTable-reddit-clone
+      AttributeDefinitions:
+        - AttributeName: CommentId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: CommentId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
