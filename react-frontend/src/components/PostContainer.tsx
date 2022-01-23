@@ -33,7 +33,7 @@ const PostContainer: React.FC = () => {
 	}
 
 	return (
-		<div className="flex flex-col w-full items-center py-5 overflow-y-scroll">
+		<div className="flex flex-col w-full items-center py-5 overflow-y-scroll no-scrollbar">
 			{ showCreatePost && <CreatePost /> }
 			{ data.posts.length === 0 && <p>No Posts to Show</p> }
 			{ data.posts.map((p, idx) => 
