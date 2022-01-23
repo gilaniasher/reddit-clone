@@ -6,7 +6,7 @@ export interface LocalUser {
 }
 
 export interface LocalState {
-	modal: '' | 'login' | 'signup',
+	modal: '' | 'login' | 'signup' | 'verify',
 	loggedInUser?: LocalUser,
 	showCreatePost: boolean,
 	reloadPosts: boolean,

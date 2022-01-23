@@ -3,10 +3,6 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: reddit-clone-user-pool
-      UsernameAttributes:
-        # Usernames required by default
-        # Can add preferred_username to enable changing of username
-        - email
       AutoVerifiedAttributes:
         - email
   CognitoUserPoolClient:

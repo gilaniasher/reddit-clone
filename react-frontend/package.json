@@ -8,6 +8,7 @@
     "@types/node": "^16.11.18",
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
+    "amazon-cognito-identity-js": "^5.2.4",
     "dayjs": "^1.10.7",
     "graphql": "^16.2.0",
     "react": "^17.0.2",
