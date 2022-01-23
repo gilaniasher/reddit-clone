@@ -5,7 +5,15 @@ import { useLocalState } from '../apollo/hooks'
 
 const AccountPanel: React.FC = () => {
 	const { loggedInUser } = useReactiveVar(localStateVar)
-	const { setModal } = useLocalState(localStateVar)
+	const { setModal, setUser } = useLocalState(localStateVar)
+
+	const initSignout = () => {
+		if (loggedInUser) {
+			loggedInUser.cognitoUser.signOut()
+			setUser(undefined)
+			window.location.reload()
+		}
+	}
 
 	return (
 		<div className="grid grid-cols-3 w-full h-16 px-5 bg-zinc-900 drop-shadow-lg">
@@ -16,12 +24,20 @@ const AccountPanel: React.FC = () => {
 				{ (loggedInUser !== undefined) && 'Welcome u/' + loggedInUser.username }
 			</span>
 			<div className="flex justify-end items-center">
-				<button onClick={() => setModal('login')} className="rounded-lg w-24 h-10 bg-cyan-300 text-black">
-					Login
-				</button>
-				<button onClick={() => setModal('signup')} className="rounded-lg w-24 h-10 mx-4 bg-cyan-300 text-black">
-					Sign Up
-				</button>
+				{ loggedInUser
+					? <button onClick={initSignout} className="rounded-lg w-24 h-10 bg-cyan-300 text-black">
+							Sign Out
+						</button>
+					: <>
+							<button onClick={() => setModal('login')} className="rounded-lg w-24 h-10 bg-cyan-300 text-black">
+								Login
+							</button>
+							<button onClick={() => setModal('signup')} className="rounded-lg w-24 h-10 mx-4 bg-cyan-300 text-black">
+								Sign Up
+							</button>	
+						</>	
+				}
+				
 			</div>
 		</div>
 	)

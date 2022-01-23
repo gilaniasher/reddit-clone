@@ -1,39 +1,38 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { XIcon } from '@heroicons/react/outline'
 
 import { cognitoLogin, cognitoSignup, cognitoVerify } from '../utils/cognito'
 
-import { useLazyQuery, useMutation, useReactiveVar } from '@apollo/client'
+import { useMutation, useReactiveVar } from '@apollo/client'
 import { localStateVar } from '../apollo/cache'
 import { useLocalState } from '../apollo/hooks'
 
 import { CREATE_USER } from '../apollo/mutations'
-import { GET_USER } from '../apollo/queries'
-import { CreateUserInput, CreateUserOutput, UserInput, UserOutput } from '../apollo/apiTypes'
+import { CreateUserInput, CreateUserOutput } from '../apollo/apiTypes'
 
 const LoginForm: React.FC = () =>  {
 	const [username, setUsername] = useState('')
 	const [password, setPassword] = useState('')
-	const [getUser, { called, loading, data, error }] = useLazyQuery<UserOutput, UserInput>(GET_USER)
 	const { setUser, setModal } = useLocalState(localStateVar)
 
 	const initLogin = () => {
-		cognitoLogin(username, password, () => {
-			getUser({ variables: { username } })
-			setUsername('')
+		cognitoLogin(username, password, user => {
+			user.getUserAttributes((err, result) => {
+				if (err || !result) {
+					alert(err?.message || JSON.stringify(err))
+					return
+				}
+
+				const email = result.find(x => x.Name === 'email')?.Value || ''
+				setUser({ username, email, cognitoUser: user })
+				setModal('')
+			})
 		})
 	}
 
-	useEffect(() => {
-		if (data?.user) {
-			setUser(data.user)
-			setModal('')
-		}
-	}, [data, setModal, setUser])
-
 	return (
 		<div className="flex text-center flex-col items-center">
-			<h1 className="text-2xl mb-5">Login</h1>
+			<h1 className="text-2xl my-5">Login</h1>
 			<input
 				className="p-3 border-2 rounded-lg mb-4"
 				placeholder="Username"
@@ -48,15 +47,8 @@ const LoginForm: React.FC = () =>  {
 				onChange={e => setPassword(e.target.value)}
 			/>
 			<button onClick={initLogin} className="rounded-lg w-24 h-10 bg-cyan-300 text-black my-5 flex items-center justify-center">
-				{ loading && <div className="animate-spin h-5 w-5 rounded-full border-b-2 border-gray-900 mr-3" /> }
 				Log In!
 			</button>
-			{ (error !== undefined) &&
-					<p className="text-red-600 mt-4">{error.message[0].toUpperCase() + error.message.slice(1)}</p>
-			}
-			{ (called && !loading && error === undefined) &&
-					<p className="text-green-600 mt-4">Success! Logging you in...</p>
-			}
 		</div>
 	)
 }

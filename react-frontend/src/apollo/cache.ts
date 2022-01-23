@@ -1,8 +1,10 @@
 import { InMemoryCache, makeVar } from '@apollo/client'
+import { CognitoUser } from 'amazon-cognito-identity-js'
 
 export interface LocalUser {
 	username: string,
-	email: string
+	email: string,
+	cognitoUser: CognitoUser
 }
 
 export interface LocalState {

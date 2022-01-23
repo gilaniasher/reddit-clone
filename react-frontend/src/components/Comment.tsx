@@ -105,7 +105,7 @@ const Comment: React.FC<Props> = ({ data, refreshComments }) => {
 					</div>
 			}
 			<div className="pl-8 mt-8">
-				{ (replies || []).map(c => <Comment data={c} refreshComments={refreshComments} />)}
+				{ (replies || []).map(c => <Comment key={c.id} data={c} refreshComments={refreshComments} />)}
 			</div>
 		</div>
 	)
