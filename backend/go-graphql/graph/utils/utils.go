@@ -9,7 +9,9 @@ import (
 )
 
 var sess = session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-var SVC = dynamodb.New(sess, &aws.Config{Endpoint: aws.String("http://localhost:8000")})
+
+// var SVC = dynamodb.New(sess, &aws.Config{Endpoint: aws.String("http://localhost:8000")})
+var SVC = dynamodb.New(sess)
 
 func Contains(s []*string, target string) bool {
 	for _, x := range s {

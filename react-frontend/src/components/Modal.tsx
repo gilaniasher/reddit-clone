@@ -24,7 +24,7 @@ const LoginForm: React.FC = () =>  {
 			setUser(data.user)
 			setModal('')
 		}
-	}, [data])
+	}, [data, setModal, setUser])
 
 	return (
 		<div className="flex text-center flex-col items-center">

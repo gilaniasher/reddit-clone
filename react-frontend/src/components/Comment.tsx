@@ -44,7 +44,7 @@ const Comment: React.FC<Props> = ({ data, refreshComments }) => {
 			console.log('about to refresh comments')
 			refreshComments()
 		}
-	}, [replyCalled, replyError, replyLoading])
+	}, [replyCalled, replyError, replyLoading, refreshComments])
 
 	const handleVoteComment = (like: boolean) => {
 		if (loggedInUser === undefined)

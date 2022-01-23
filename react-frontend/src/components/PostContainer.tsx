@@ -20,7 +20,7 @@ const PostContainer: React.FC = () => {
 			refetch()
 			triggerReload(false)
 		}
-	}, [reloadPosts])
+	}, [reloadPosts, refetch, triggerReload])
 
 	if (loading)
 		return (

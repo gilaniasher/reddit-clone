@@ -37,7 +37,7 @@ const LongPost: React.FC<Props> = ({ postId }) => {
 	useEffect(() => {
 		if (newCommentCalled && !newCommentLoading &&  !newCommentError)
 			refetchComments()
-	}, [newCommentCalled, newCommentLoading, newCommentError])
+	}, [newCommentCalled, newCommentLoading, newCommentError, refetchComments])
 
 	if (postLoading || commentsLoading)
 		return <div className="animate-spin h-5 w-5 rounded-full border-b-2 border-gray-900" />

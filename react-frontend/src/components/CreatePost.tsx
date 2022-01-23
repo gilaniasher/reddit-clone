@@ -45,7 +45,7 @@ const CreatePost: React.FC = () => {
 
 		triggerReload(true)
 		showCreatePost(false)
-	}, [data])
+	}, [data, showCreatePost, triggerReload])
 
 	return (
 		<div className="flex flex-col justify-between w-3/4 h-80 rounded-md border-4 border-gray-400 m-4 p-4">
