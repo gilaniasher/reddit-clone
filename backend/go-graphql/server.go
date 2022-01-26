@@ -13,15 +13,15 @@ import (
 	"github.com/rs/cors"
 )
 
-const defaultPort = "8080"
-
 func main() {
-	port := defaultPort
+	port := "8080"
+	certPath := "/etc/letsencrypt/live/stuffdwarf.ddns.net/fullchain.pem"
+	keyPath := "/etc/letsencrypt/live/stuffdwarf.ddns.net/privkey.pem"
 	router := chi.NewRouter()
 
 	// Add CORS middleware around every request
 	router.Use(cors.New(cors.Options{
-		AllowedOrigins:   []string{"https://gilaniasher.github.io/reddit-clone"},
+		AllowedOrigins:   []string{"https://gilaniasher.github.io"},
 		AllowCredentials: true,
 	}).Handler)
 
@@ -30,6 +30,8 @@ func main() {
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	log.Printf("connect to https://localhost:%s/ for GraphQL playground", port)
+
+	// Add SSL Certificate for HTTPS (generated with certbot)
+	log.Fatal(http.ListenAndServeTLS(":"+port, certPath, keyPath, router))
 }
