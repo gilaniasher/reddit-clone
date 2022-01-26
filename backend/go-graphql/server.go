@@ -21,7 +21,7 @@ func main() {
 
 	// Add CORS middleware around every request
 	router.Use(cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   []string{"https://gilaniasher.github.io/reddit-clone"},
 		AllowCredentials: true,
 	}).Handler)
 

@@ -1,4 +1,4 @@
-# Reddit Clone
+# [Reddit Clone](https://gilaniasher.github.io/reddit-clone/)
 I have been meaning to practice some new technologies so I decided to make a clone of Reddit.
 
 ## Frontend
@@ -7,8 +7,10 @@ I have been meaning to practice some new technologies so I decided to make a clo
 - Apollo Client (GraphQL client, state management)
 
 ## Backend
-- Go server (GraphQL interface using the gqlgen framework)
-- DynamoDB using the Serverless Framework
+- Go server
+    - GraphQL interface using the gqlgen framework
+    - Hosted on my Raspberry Pi using a NoIp hostname
+- DynamoDB
 - Amazon Cognito for user authentication
 
 ## Running Locally
