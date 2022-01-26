@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/reddit-clone/static/css/main.87e0cd8b.css",
+    "main.js": "/reddit-clone/static/js/main.c99cae3d.js",
+    "static/js/787.f4702321.chunk.js": "/reddit-clone/static/js/787.f4702321.chunk.js",
+    "index.html": "/reddit-clone/index.html",
+    "main.87e0cd8b.css.map": "/reddit-clone/static/css/main.87e0cd8b.css.map",
+    "main.c99cae3d.js.map": "/reddit-clone/static/js/main.c99cae3d.js.map",
+    "787.f4702321.chunk.js.map": "/reddit-clone/static/js/787.f4702321.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.87e0cd8b.css",
+    "static/js/main.c99cae3d.js"
+  ]
+}
