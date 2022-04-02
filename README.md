@@ -9,7 +9,8 @@ I have been meaning to practice some new technologies so I decided to make a clo
 ## Backend
 - Go server
     - GraphQL interface using the gqlgen framework
-    - Hosted on my Raspberry Pi using a NoIp hostname
+    - ~~Hosted on my Raspberry Pi using a NoIp hostname~~
+    - Hosted on Lambda
 - DynamoDB
 - Amazon Cognito for user authentication
 
