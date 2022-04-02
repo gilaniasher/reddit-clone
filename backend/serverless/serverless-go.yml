@@ -1,0 +1,11 @@
+graphql:
+  handler: ./bin/go-server
+  events:
+    - http:
+        path: /{proxy+}
+        method: ANY
+        cors: true
+    - http:
+        path: /
+        method: ANY
+        cors: true
