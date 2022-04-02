@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph"
 	"github.com/gilaniasher/reddit-clone/backend/go-graphql/graph/generated"
 
@@ -24,10 +23,15 @@ var muxRouter *mux.Router
 
 func init() {
 	muxRouter = mux.NewRouter()
-	schema := generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}})
-	server := handler.NewDefaultServer(schema)
+	server := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+
+	// Add CORS middleware around every request
+	muxRouter.Use(cors.New(cors.Options{
+		AllowedOrigins:   []string{"https://gilaniasher.github.io"},
+		AllowCredentials: true,
+	}).Handler)
+
 	muxRouter.Handle("/query", server)
-	muxRouter.Handle("/", playground.Handler("GraphQL playground", "/query"))
 }
 
 func lambdaHandler(ctx context.Context, req core.SwitchableAPIGatewayRequest) (*core.SwitchableAPIGatewayResponse, error) {
@@ -46,20 +50,12 @@ func raspberryHandler() {
 	certPath := "/etc/letsencrypt/live/stuffdwarf.ddns.net/fullchain.pem"
 	keyPath := "/etc/letsencrypt/live/stuffdwarf.ddns.net/privkey.pem"
 
-	log.Printf("connect to https://localhost:%s/ for GraphQL playground", port)
-
 	// Add SSL Certificate for HTTPS (generated with certbot)
 	log.Fatal(http.ListenAndServeTLS(":"+port, certPath, keyPath, muxRouter))
 }
 
 func main() {
 	isRunningAtLambda := strings.Contains(os.Getenv("AWS_EXECUTION_ENV"), "AWS_Lambda_")
-
-	// Add CORS middleware around every request
-	muxRouter.Use(cors.New(cors.Options{
-		AllowedOrigins:   []string{"https://gilaniasher.github.io"},
-		AllowCredentials: true,
-	}).Handler)
 
 	if isRunningAtLambda {
 		lambda.Start(lambdaHandler)
